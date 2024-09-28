@@ -113,8 +113,11 @@ export const GameBoard = (props: CanvasProps) => {
       const x = paddingX + stoneX * distanceX;
       ctx.moveTo(x,y);
       ctx.arc(x, y, radius, startAngle, endAngle, true);
+      
     }
     ctx.fill()
+
+    
   }
 
   const drawAll = useCallback(() => {
@@ -139,33 +142,41 @@ export const GameBoard = (props: CanvasProps) => {
     if (!rect) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    // リファクタが必要（クリックしたのはどの交点か）
+  
+    // クリックしたのはどの交点かを計算
     let stoneX = 0, stoneY = 0;
-    for (let i=0; i<size; i++){
+    for (let i = 0; i < size; i++) {
       const lineY = paddingY + i * distanceY;
       const lineX = paddingX + i * distanceX;
-      if (lineX-distanceX/2 <= x && lineX+distanceX/2) stoneX = i;
-      if (lineY-distanceY/2 <= y && lineY+distanceY/2) stoneY = i;
+      if (lineX - distanceX / 2 <= x && x <= lineX + distanceX / 2) stoneX = i;
+      if (lineY - distanceY / 2 <= y && y <= lineY + distanceY / 2) stoneY = i;
     }
-
-    const stoneRec: StoneRec = `${stoneX}-${stoneY}` 
-    if (!gameRecord.includes(stoneRec)){
-      setGameRecord([...gameRecord,stoneRec]);
+  
+    const stoneRec: StoneRec = `${stoneX}-${stoneY}`;
+    if (!gameRecord.includes(stoneRec)) {
+      setGameRecord((prev) => [...prev, stoneRec]);
       const ctx = getCtx();
-      const radius = Math.min(distanceX,distanceY)/2;
+      const radius = Math.min(distanceX, distanceY) / 2 - 2; // 境界線分を引いて調整
       const startAngle = 0;
       const endAngle = Math.PI * 2;
-      ctx.beginPath();
-      ctx.fillStyle = stoneColor;
       const y = paddingY + stoneY * distanceY;
       const x = paddingX + stoneX * distanceX;
-      ctx.moveTo(x, y);
+  
+      // 石の塗りつぶし描画
+      ctx.beginPath();
       ctx.arc(x, y, radius, startAngle, endAngle, true);
+      ctx.fillStyle = stoneColor;
       ctx.fill();
+  
+      // 境界線の描画
+      ctx.beginPath();
+      ctx.arc(x, y, radius, startAngle, endAngle, true);
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
-    return;
-  }
+  };
+  
 
   return <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} onClick={handleClick} />;
 };
