@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { MouseEventHandler, useCallback, useEffect, useRef, useState } from "react";
 
 type CanvasProps = {
   canvasWidth: number;
@@ -8,6 +8,7 @@ type CanvasProps = {
   paddingX: number;
   paddingY: number;
   size: number;
+  stoneColor?: 'black' | 'white';
 };
 
 export const GameBoard = (props: CanvasProps) => {
@@ -17,8 +18,15 @@ export const GameBoard = (props: CanvasProps) => {
     paddingX,
     paddingY,
     size,
+    stoneColor='black',
   } = props;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [distanceX, setDistanceX] = useState((canvasWidth - 2*paddingX)/(size-1));
+  const [distanceY, setDistanceY] = useState((canvasHeight - 2*paddingY)/(size-1));
+  useEffect(()=>{
+    setDistanceX((canvasWidth - 2*paddingX)/(size-1));
+    setDistanceY((canvasHeight - 2*paddingY)/(size-1));
+  }, [canvasHeight, canvasWidth,paddingX,paddingY,size])
 
   const getCtx = (): CanvasRenderingContext2D => {
     const canvas: HTMLCanvasElement | null = canvasRef.current;
@@ -55,8 +63,6 @@ export const GameBoard = (props: CanvasProps) => {
       ctx.beginPath();
       ctx.strokeStyle = fgColor;
       ctx.lineWidth = 2;
-      const distanceX = (canvasWidth - 2*paddingX)/(size-1);
-      const distanceY = (canvasHeight - 2*paddingY)/(size-1);
       for (let i = 0; i < size; i++) {
         const y = paddingY + i * distanceY;
         const x = paddingX + i * distanceX;
@@ -67,31 +73,49 @@ export const GameBoard = (props: CanvasProps) => {
       }
       ctx.stroke();
     },
-    [size, canvasWidth, canvasHeight, paddingX, paddingY]
+    [size, canvasWidth, canvasHeight, paddingX, paddingY, distanceX, distanceY]
   );
 
   const drawArc = useCallback(
     (ctx: CanvasRenderingContext2D, {fgColor='black'}: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>) => {
-      if (size!==19)return;
+      if (![9,19].includes(size))return;
       const radius = 5;
       const startAngle = 0;
       const endAngle = Math.PI * 2;
       ctx.beginPath();
       ctx.fillStyle = fgColor;
-      const distanceX = (canvasWidth - 2*paddingX)/(size-1);
-      const distanceY = (canvasHeight - 2*paddingY)/(size-1);
-      const arcPos=[[4,4],[10,4],[16,4],[4,10],[10,10],[16,10],[4,16],[10,16],[16,16]]as const;
+      let arcPos=[[4,4],[10,4],[16,4], [4,10],[10,10],[16,10], [4,16],[10,16],[16,16]];
+      if (size===9) arcPos=[[5,5]];
       for (const pos of arcPos) {
         const y = paddingY + (pos[1]-1) * distanceY;
         const x = paddingX + (pos[0]-1) * distanceX;
-        
         ctx.moveTo(x, y);
         ctx.arc(x, y, radius, startAngle, endAngle, true);
       }
       ctx.fill();
     },
-    [canvasHeight,canvasWidth,paddingX,paddingY,size]
+    [paddingX,paddingY,size,distanceX,distanceY]
   );
+
+  type StoneRec = `${number}-${number}`;
+  const [gameRecord, setGameRecord] = useState<StoneRec[]>([]);
+  const drawStones = (ctx: CanvasRenderingContext2D, {fgColor=stoneColor}: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>) => {
+    const radius = Math.min(distanceX,distanceY)/2;
+    const startAngle = 0;
+    const endAngle = Math.PI * 2;
+
+    ctx.beginPath();
+    ctx.fillStyle=fgColor;
+    for(const stoneRec of gameRecord ){
+      const stoneX = parseInt(stoneRec.split('-')[0],10);
+      const stoneY = parseInt(stoneRec.split('-')[1],10);
+      const y = paddingY + stoneY * distanceY;
+      const x = paddingX + stoneX * distanceX;
+      ctx.moveTo(x,y);
+      ctx.arc(x, y, radius, startAngle, endAngle, true);
+    }
+    ctx.fill()
+  }
 
   const drawAll = useCallback(() => {
     const ctx: CanvasRenderingContext2D = getCtx();
@@ -101,6 +125,47 @@ export const GameBoard = (props: CanvasProps) => {
   }, [drawRect, drawLine, drawArc]);
 
   useEffect(() => drawAll(), [drawAll]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(()=> drawStones(getCtx(), {}), []);
 
-  return <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} />;
+  const handleClick: MouseEventHandler<HTMLCanvasElement> = (e) => {
+    /*
+     * rectでcanvasの絶対座標位置を取得し、
+     * クリック座標であるe.clientX,e.clientYからその分を引く
+     * ※クリック座標はdocumentからの位置を返すため
+     * ※rectはスクロール量によって値が変わるので、onClick()内でつど定義
+     */
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // リファクタが必要（クリックしたのはどの交点か）
+    let stoneX = 0, stoneY = 0;
+    for (let i=0; i<size; i++){
+      const lineY = paddingY + i * distanceY;
+      const lineX = paddingX + i * distanceX;
+      if (lineX-distanceX/2 <= x && lineX+distanceX/2) stoneX = i;
+      if (lineY-distanceY/2 <= y && lineY+distanceY/2) stoneY = i;
+    }
+
+    const stoneRec: StoneRec = `${stoneX}-${stoneY}` 
+    if (!gameRecord.includes(stoneRec)){
+      setGameRecord([...gameRecord,stoneRec]);
+      const ctx = getCtx();
+      const radius = Math.min(distanceX,distanceY)/2;
+      const startAngle = 0;
+      const endAngle = Math.PI * 2;
+      ctx.beginPath();
+      ctx.fillStyle = stoneColor;
+      const y = paddingY + stoneY * distanceY;
+      const x = paddingX + stoneX * distanceX;
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, radius, startAngle, endAngle, true);
+      ctx.fill();
+    }
+    return;
+  }
+
+  return <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} onClick={handleClick} />;
 };
