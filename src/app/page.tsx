@@ -16,12 +16,7 @@ export default function Home() {
         setBoardWidth(Math.min(windowWidth-30, 900));
       else
         setBoardWidth(Math.min(windowWidth/2, 900));
-    
-    if (windowWidth > 800) {
-      setButtonContainerMargin((windowWidth - boardWidth) / 2);
-    } else {
-      setButtonContainerMargin(0); // 小さい画面ではデフォルトの位置
-    }
+  
   }
     handleResize()
     window.addEventListener('resize', handleResize);
