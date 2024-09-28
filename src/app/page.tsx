@@ -1,6 +1,6 @@
 'use client';
 
-import { BackButton } from "@/components/DeleteButton";
+import { BackButton } from "@/components/BackButton";
 import { GameBoard } from "@/components/GameBoard";
 import { StoneButton } from "@/components/StoneButton";
 import { VisualButton } from "@/components/VisualizeButton";
