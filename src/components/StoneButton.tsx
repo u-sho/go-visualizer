@@ -1,15 +1,17 @@
 // src/components/StoneButton.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 
-export const StoneButton = () => {
-  const [color, setColor] = useState('black');
+interface StoneButtonProps {
+  color: 'black' | 'white';
+  onToggleColor: () => void;
+}
 
-  const toggleColor = () => {
-    setColor((prevColor) => (prevColor === 'black' ? 'white' : 'black'));
-  };
-
+export const StoneButton: React.FC<StoneButtonProps> = ({
+  color,
+  onToggleColor
+}) => {
   return (
     <button
       className={`px-4 py-2 rounded-md border-2 cursor-pointer text-lg ${
@@ -17,7 +19,7 @@ export const StoneButton = () => {
           ? 'bg-black text-white border-gray-700'
           : 'bg-white text-black border-gray-700'
       }`}
-      onClick={toggleColor}
+      onClick={onToggleColor}
     >
       {color === 'black' ? 'Switch to White' : 'Switch to Black'}
     </button>

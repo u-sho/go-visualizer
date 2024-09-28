@@ -5,7 +5,9 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState
+  useState,
+  forwardRef,
+  useImperativeHandle
 } from 'react';
 
 type CanvasProps = {
@@ -17,7 +19,17 @@ type CanvasProps = {
   stoneColor?: 'black' | 'white';
 };
 
-export const GameBoard = (props: CanvasProps) => {
+// StoneRec 型の定義
+type StoneRec = `${number}-${number}`;
+type StoneData = {
+  position: StoneRec;
+  color: 'black' | 'white';
+};
+
+export const GameBoard = forwardRef(function GameBoard(
+  props: CanvasProps,
+  ref
+) {
   const {
     canvasWidth,
     canvasHeight,
@@ -26,6 +38,7 @@ export const GameBoard = (props: CanvasProps) => {
     size,
     stoneColor = 'black'
   } = props;
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [distanceX, setDistanceX] = useState(
     (canvasWidth - 2 * paddingX) / (size - 1)
@@ -33,6 +46,8 @@ export const GameBoard = (props: CanvasProps) => {
   const [distanceY, setDistanceY] = useState(
     (canvasHeight - 2 * paddingY) / (size - 1)
   );
+  const [gameRecord, setGameRecord] = useState<StoneData[]>([]);
+
   useEffect(() => {
     setDistanceX((canvasWidth - 2 * paddingX) / (size - 1));
     setDistanceY((canvasHeight - 2 * paddingY) / (size - 1));
@@ -129,79 +144,81 @@ export const GameBoard = (props: CanvasProps) => {
     [paddingX, paddingY, size, distanceX, distanceY]
   );
 
-  type StoneRec = `${number}-${number}`;
-  const [gameRecord, setGameRecord] = useState<StoneRec[]>([]);
-  const drawStones = (
-    ctx: CanvasRenderingContext2D,
-    { fgColor = stoneColor }: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>
-  ) => {
-    const radius = Math.min(distanceX, distanceY) / 2;
+  const drawStones = useCallback(() => {
+    const ctx = getCtx();
+    const radius = Math.min(distanceX, distanceY) / 2 - 2;
     const startAngle = 0;
     const endAngle = Math.PI * 2;
 
-    ctx.beginPath();
-    ctx.fillStyle = fgColor;
-    for (const stoneRec of gameRecord) {
-      const stoneX = parseInt(stoneRec.split('-')[0], 10);
-      const stoneY = parseInt(stoneRec.split('-')[1], 10);
+    for (const { position, color } of gameRecord) {
+      const [stoneX, stoneY] = position.split('-').map(Number);
       const y = paddingY + stoneY * distanceY;
       const x = paddingX + stoneX * distanceX;
-      ctx.moveTo(x, y);
+
+      // 石の塗りつぶし描画
+      ctx.beginPath();
       ctx.arc(x, y, radius, startAngle, endAngle, true);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // 境界線の描画
+      ctx.beginPath();
+      ctx.arc(x, y, radius, startAngle, endAngle, true);
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
-    ctx.fill();
-  };
+  }, [gameRecord, distanceX, distanceY, paddingX, paddingY]);
 
   const drawAll = useCallback(() => {
-    const ctx: CanvasRenderingContext2D = getCtx();
+    const ctx = getCtx();
     drawRect(ctx, {});
     drawLine(ctx, {});
     drawArc(ctx, { fgColor: 'gray' });
-  }, [drawRect, drawLine, drawArc]);
+    drawStones();
+  }, [drawRect, drawLine, drawArc, drawStones]);
 
   useEffect(() => drawAll(), [drawAll]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => drawStones(getCtx(), {}), []);
 
   const handleClick: MouseEventHandler<HTMLCanvasElement> = (e) => {
-    /*
-     * rectでcanvasの絶対座標位置を取得し、
-     * クリック座標であるe.clientX,e.clientYからその分を引く
-     * ※クリック座標はdocumentからの位置を返すため
-     * ※rectはスクロール量によって値が変わるので、onClick()内でつど定義
-     */
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // リファクタが必要（クリックしたのはどの交点か）
     let stoneX = 0,
       stoneY = 0;
     for (let i = 0; i < size; i++) {
       const lineY = paddingY + i * distanceY;
       const lineX = paddingX + i * distanceX;
-      if (lineX - distanceX / 2 <= x && lineX + distanceX / 2) stoneX = i;
-      if (lineY - distanceY / 2 <= y && lineY + distanceY / 2) stoneY = i;
+      if (lineX - distanceX / 2 <= x && x <= lineX + distanceX / 2) stoneX = i;
+      if (lineY - distanceY / 2 <= y && y <= lineY + distanceY / 2) stoneY = i;
     }
 
     const stoneRec: StoneRec = `${stoneX}-${stoneY}`;
-    if (!gameRecord.includes(stoneRec)) {
-      setGameRecord([...gameRecord, stoneRec]);
-      const ctx = getCtx();
-      const radius = Math.min(distanceX, distanceY) / 2;
-      const startAngle = 0;
-      const endAngle = Math.PI * 2;
-      ctx.beginPath();
-      ctx.fillStyle = stoneColor;
-      const y = paddingY + stoneY * distanceY;
-      const x = paddingX + stoneX * distanceX;
-      ctx.moveTo(x, y);
-      ctx.arc(x, y, radius, startAngle, endAngle, true);
-      ctx.fill();
+    if (!gameRecord.some((record) => record.position === stoneRec)) {
+      setGameRecord((prev) => [
+        ...prev,
+        { position: stoneRec, color: stoneColor }
+      ]);
+      drawAll();
     }
-    return;
   };
+
+  // 直近の石を削除する関数
+  const deleteLastStone = () => {
+    setGameRecord((prev) => {
+      if (prev.length === 0) return prev;
+      const newRecord = prev.slice(0, -1);
+      drawAll(); // 盤面を再描画
+      return newRecord;
+    });
+  };
+
+  // refを使ってdeleteLastStoneを外部から呼び出せるようにする
+  useImperativeHandle(ref, () => ({
+    deleteLastStone
+  }));
 
   return (
     <canvas
@@ -211,4 +228,4 @@ export const GameBoard = (props: CanvasProps) => {
       onClick={handleClick}
     />
   );
-};
+});
