@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef } from "react";
 
 type CanvasProps = {
   canvasWidth: number;
-  canvasHeight: number;paddingX: number;paddingY: number;
+  canvasHeight: number;
+  paddingX: number;
+  paddingY: number;
   size: number;
 };
 
