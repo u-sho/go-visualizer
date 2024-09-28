@@ -1,0 +1,7 @@
+{
+    "[typescript][typescriptreact]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+}
