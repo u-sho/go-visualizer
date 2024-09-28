@@ -1,9 +1,9 @@
-// src/components/VisualButton.tsx
+// src/components/StoneButton.tsx
 "use client";
 
 import React, { useState } from 'react';
 
-export const VisualButton = () => {
+export const StoneButton = () => {
   const [color, setColor] = useState('black');
 
   const toggleColor = () => {
@@ -19,7 +19,7 @@ export const VisualButton = () => {
       }`}
       onClick={toggleColor}
     >
-      {color === 'black' ? 'Visualize On' : 'Visualize Off'}
+      {color === 'black' ? 'Switch to White' : 'Switch to Black'}
     </button>
   );
 };
