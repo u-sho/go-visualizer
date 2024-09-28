@@ -1,6 +1,12 @@
-"use client";
+'use client';
 
-import { MouseEventHandler, useCallback, useEffect, useRef, useState } from "react";
+import {
+  MouseEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState
+} from 'react';
 
 type CanvasProps = {
   canvasWidth: number;
@@ -18,20 +24,24 @@ export const GameBoard = (props: CanvasProps) => {
     paddingX,
     paddingY,
     size,
-    stoneColor='black',
+    stoneColor = 'black'
   } = props;
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [distanceX, setDistanceX] = useState((canvasWidth - 2*paddingX)/(size-1));
-  const [distanceY, setDistanceY] = useState((canvasHeight - 2*paddingY)/(size-1));
-  useEffect(()=>{
-    setDistanceX((canvasWidth - 2*paddingX)/(size-1));
-    setDistanceY((canvasHeight - 2*paddingY)/(size-1));
-  }, [canvasHeight, canvasWidth,paddingX,paddingY,size])
+  const [distanceX, setDistanceX] = useState(
+    (canvasWidth - 2 * paddingX) / (size - 1)
+  );
+  const [distanceY, setDistanceY] = useState(
+    (canvasHeight - 2 * paddingY) / (size - 1)
+  );
+  useEffect(() => {
+    setDistanceX((canvasWidth - 2 * paddingX) / (size - 1));
+    setDistanceY((canvasHeight - 2 * paddingY) / (size - 1));
+  }, [canvasHeight, canvasWidth, paddingX, paddingY, size]);
 
   const getCtx = (): CanvasRenderingContext2D => {
     const canvas: HTMLCanvasElement | null = canvasRef.current;
-    if (!canvas?.getContext) throw new Error("Something may happen.");
-    return canvas.getContext("2d") as CanvasRenderingContext2D;
+    if (!canvas?.getContext) throw new Error('Something may happen.');
+    return canvas.getContext('2d') as CanvasRenderingContext2D;
   };
 
   type Context2DCallbackOptions = {
@@ -39,27 +49,36 @@ export const GameBoard = (props: CanvasProps) => {
     bgColor: string;
     startX: number;
     startY: number;
-  }&({
-    endX: number;
-    endY: number;
-  }|{
-    width: number;
-    height: number;
-  });
+  } & (
+    | {
+        endX: number;
+        endY: number;
+      }
+    | {
+        width: number;
+        height: number;
+      }
+  );
 
   const drawRect = useCallback(
-    (ctx: CanvasRenderingContext2D, {bgColor='white'}: Pick<Partial<Context2DCallbackOptions>, 'bgColor'>) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      { bgColor = 'white' }: Pick<Partial<Context2DCallbackOptions>, 'bgColor'>
+    ) => {
       const rect = new Path2D();
       rect.rect(0, 0, canvasWidth, canvasHeight);
       ctx.beginPath();
       ctx.fillStyle = bgColor;
       ctx.fill(rect);
     },
-    [canvasWidth,canvasHeight]
+    [canvasWidth, canvasHeight]
   );
 
   const drawLine = useCallback(
-    (ctx: CanvasRenderingContext2D, {fgColor='black'}: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>) => {
+    (
+      ctx: CanvasRenderingContext2D,
+      { fgColor = 'black' }: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>
+    ) => {
       ctx.beginPath();
       ctx.strokeStyle = fgColor;
       ctx.lineWidth = 2;
@@ -67,9 +86,9 @@ export const GameBoard = (props: CanvasProps) => {
         const y = paddingY + i * distanceY;
         const x = paddingX + i * distanceX;
         ctx.moveTo(paddingX, y);
-        ctx.lineTo(canvasWidth-paddingX, y);
+        ctx.lineTo(canvasWidth - paddingX, y);
         ctx.moveTo(x, paddingY);
-        ctx.lineTo(x, canvasHeight-paddingY);
+        ctx.lineTo(x, canvasHeight - paddingY);
       }
       ctx.stroke();
     },
@@ -77,56 +96,72 @@ export const GameBoard = (props: CanvasProps) => {
   );
 
   const drawArc = useCallback(
-    (ctx: CanvasRenderingContext2D, {fgColor='black'}: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>) => {
-      if (![9,19].includes(size))return;
+    (
+      ctx: CanvasRenderingContext2D,
+      { fgColor = 'black' }: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>
+    ) => {
+      if (![9, 19].includes(size)) return;
       const radius = 5;
       const startAngle = 0;
       const endAngle = Math.PI * 2;
       ctx.beginPath();
       ctx.fillStyle = fgColor;
-      let arcPos=[[4,4],[10,4],[16,4], [4,10],[10,10],[16,10], [4,16],[10,16],[16,16]];
-      if (size===9) arcPos=[[5,5]];
+      let arcPos = [
+        [4, 4],
+        [10, 4],
+        [16, 4],
+        [4, 10],
+        [10, 10],
+        [16, 10],
+        [4, 16],
+        [10, 16],
+        [16, 16]
+      ];
+      if (size === 9) arcPos = [[5, 5]];
       for (const pos of arcPos) {
-        const y = paddingY + (pos[1]-1) * distanceY;
-        const x = paddingX + (pos[0]-1) * distanceX;
+        const y = paddingY + (pos[1] - 1) * distanceY;
+        const x = paddingX + (pos[0] - 1) * distanceX;
         ctx.moveTo(x, y);
         ctx.arc(x, y, radius, startAngle, endAngle, true);
       }
       ctx.fill();
     },
-    [paddingX,paddingY,size,distanceX,distanceY]
+    [paddingX, paddingY, size, distanceX, distanceY]
   );
 
   type StoneRec = `${number}-${number}`;
   const [gameRecord, setGameRecord] = useState<StoneRec[]>([]);
-  const drawStones = (ctx: CanvasRenderingContext2D, {fgColor=stoneColor}: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>) => {
-    const radius = Math.min(distanceX,distanceY)/2;
+  const drawStones = (
+    ctx: CanvasRenderingContext2D,
+    { fgColor = stoneColor }: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>
+  ) => {
+    const radius = Math.min(distanceX, distanceY) / 2;
     const startAngle = 0;
     const endAngle = Math.PI * 2;
 
     ctx.beginPath();
-    ctx.fillStyle=fgColor;
-    for(const stoneRec of gameRecord ){
-      const stoneX = parseInt(stoneRec.split('-')[0],10);
-      const stoneY = parseInt(stoneRec.split('-')[1],10);
+    ctx.fillStyle = fgColor;
+    for (const stoneRec of gameRecord) {
+      const stoneX = parseInt(stoneRec.split('-')[0], 10);
+      const stoneY = parseInt(stoneRec.split('-')[1], 10);
       const y = paddingY + stoneY * distanceY;
       const x = paddingX + stoneX * distanceX;
-      ctx.moveTo(x,y);
+      ctx.moveTo(x, y);
       ctx.arc(x, y, radius, startAngle, endAngle, true);
     }
-    ctx.fill()
-  }
+    ctx.fill();
+  };
 
   const drawAll = useCallback(() => {
     const ctx: CanvasRenderingContext2D = getCtx();
-    drawRect(ctx,{});
-    drawLine(ctx,{});
-    drawArc(ctx, {fgColor: "gray"});
+    drawRect(ctx, {});
+    drawLine(ctx, {});
+    drawArc(ctx, { fgColor: 'gray' });
   }, [drawRect, drawLine, drawArc]);
 
   useEffect(() => drawAll(), [drawAll]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(()=> drawStones(getCtx(), {}), []);
+  useEffect(() => drawStones(getCtx(), {}), []);
 
   const handleClick: MouseEventHandler<HTMLCanvasElement> = (e) => {
     /*
@@ -141,19 +176,20 @@ export const GameBoard = (props: CanvasProps) => {
     const y = e.clientY - rect.top;
 
     // リファクタが必要（クリックしたのはどの交点か）
-    let stoneX = 0, stoneY = 0;
-    for (let i=0; i<size; i++){
+    let stoneX = 0,
+      stoneY = 0;
+    for (let i = 0; i < size; i++) {
       const lineY = paddingY + i * distanceY;
       const lineX = paddingX + i * distanceX;
-      if (lineX-distanceX/2 <= x && lineX+distanceX/2) stoneX = i;
-      if (lineY-distanceY/2 <= y && lineY+distanceY/2) stoneY = i;
+      if (lineX - distanceX / 2 <= x && lineX + distanceX / 2) stoneX = i;
+      if (lineY - distanceY / 2 <= y && lineY + distanceY / 2) stoneY = i;
     }
 
-    const stoneRec: StoneRec = `${stoneX}-${stoneY}` 
-    if (!gameRecord.includes(stoneRec)){
-      setGameRecord([...gameRecord,stoneRec]);
+    const stoneRec: StoneRec = `${stoneX}-${stoneY}`;
+    if (!gameRecord.includes(stoneRec)) {
+      setGameRecord([...gameRecord, stoneRec]);
       const ctx = getCtx();
-      const radius = Math.min(distanceX,distanceY)/2;
+      const radius = Math.min(distanceX, distanceY) / 2;
       const startAngle = 0;
       const endAngle = Math.PI * 2;
       ctx.beginPath();
@@ -165,7 +201,14 @@ export const GameBoard = (props: CanvasProps) => {
       ctx.fill();
     }
     return;
-  }
+  };
 
-  return <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight} onClick={handleClick} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      width={canvasWidth}
+      height={canvasHeight}
+      onClick={handleClick}
+    />
+  );
 };

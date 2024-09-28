@@ -1,7 +1,8 @@
 {
-    "[typescript][typescriptreact]": {
-        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
-    },
-    "files.insertFinalNewline": true,
-    "files.trimFinalNewlines": true,
+  "[typescript][typescriptreact][json][jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "eslint.format.enable": true
 }
