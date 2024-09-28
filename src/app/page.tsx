@@ -8,12 +8,10 @@ export default function Home() {
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <DeleteButton></DeleteButton>
       <GameBoard
-        canvasWidth={300}
-        canvasHeight={300}
-        axisX={0}
-        axisY={0}
-        rectWidth={300}
-        rectHeight={300}
+        canvasWidth={900}
+        canvasHeight={900}
+        paddingX={30}
+        paddingY={30}
         size={19} />
       <GameStone></GameStone>
       <VisualButton></VisualButton>
