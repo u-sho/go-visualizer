@@ -8,16 +8,20 @@ import { Header } from '@/components/Header';
 import { useEffect, useRef, useState } from 'react';
 
 export default function Page() {
+  const [boardSize, setBoardSize] = useState(9);
   const [boardWidth, setBoardWidth] = useState(900);
   const [stoneColor, setStoneColor] = useState<'black' | 'white'>('black');
+  const [isVisualized, setIsVisualized] = useState(false);
   const gameBoardRef = useRef<{ deleteLastStone: () => void }>(null);
 
   useEffect(() => {
     const handleResize = () => {
       const windowWidth = window.innerWidth;
       if (windowWidth < 640) {
+        setBoardSize(9);
         setBoardWidth(Math.min(windowWidth - 30, 900));
       } else {
+        setBoardSize(19);
         setBoardWidth(Math.min(windowWidth / 2, 900));
       }
     };
@@ -28,6 +32,11 @@ export default function Page() {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  // 可視化状態を切り替える関数
+  const handleToggleVisualize = () => {
+    setIsVisualized((prev) => !prev);
+  };
 
   // 石の色を切り替える関数
   const handleToggleColor = () => {
@@ -53,15 +62,19 @@ export default function Page() {
             canvasHeight={boardWidth}
             paddingX={boardWidth * 0.03}
             paddingY={boardWidth * 0.03}
-            size={19}
+            size={boardSize}
             stoneColor={stoneColor}
+            isVisualized={isVisualized}
           />
         </div>
 
         {/* ボタン群を右に、または小さい画面では下に表示 */}
         <div className="flex flex-col gap-4 sm:w-1/2 sm:ml-auto sm:flex-row sm:items-center sm:justify-center">
-          <VisualButton />
-          <StoneButton color={stoneColor} onToggleColor={handleToggleColor} />
+          <VisualButton
+            isVisualized={isVisualized}
+            onClick={handleToggleVisualize}
+          />
+          <StoneButton color={stoneColor} onClick={handleToggleColor} />
           <BackButton onClick={handleDeleteLastStone} />{' '}
           {/* 直近の石を削除するボタン */}
         </div>

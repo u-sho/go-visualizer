@@ -1,5 +1,6 @@
 'use client';
 
+import { calcGoConnects } from '@/utils/go-connect';
 import {
   MouseEventHandler,
   useCallback,
@@ -16,29 +17,29 @@ type CanvasProps = {
   paddingX: number;
   paddingY: number;
   size: number;
+  isVisualized: boolean;
   stoneColor?: 'black' | 'white';
 };
 
 // StoneRec 型の定義
-type StoneRec = `${number}-${number}`;
-type StoneData = {
+export type StoneRec = `${number}-${number}`;
+export type StoneData = {
   position: StoneRec;
   color: 'black' | 'white';
 };
 
 export const GameBoard = forwardRef(function GameBoard(
-  props: CanvasProps,
-  ref
-) {
-  const {
+  {
     canvasWidth,
     canvasHeight,
     paddingX,
     paddingY,
     size,
+    isVisualized,
     stoneColor = 'black'
-  } = props;
-
+  }: Readonly<CanvasProps>,
+  ref
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [distanceX, setDistanceX] = useState(
     (canvasWidth - 2 * paddingX) / (size - 1)
@@ -170,13 +171,43 @@ export const GameBoard = forwardRef(function GameBoard(
     }
   }, [gameRecord, distanceX, distanceY, paddingX, paddingY]);
 
+  const drawVisualLine = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      if (!isVisualized) return;
+
+      const connects = calcGoConnects(gameRecord);
+      console.log(gameRecord);
+      console.table(connects);
+      for (const connect of connects) {
+        const [startX, startY] = connect.start.split('-').map(Number);
+        const [endX, endY] = connect.end.split('-').map(Number);
+        const start = [
+          paddingX + startX * distanceX,
+          paddingY + startY * distanceY
+        ];
+        const end = [paddingX + endX * distanceX, paddingY + endY * distanceY];
+        ctx.beginPath();
+        ctx.strokeStyle =
+          connect.stoneColor === 'black'
+            ? `rgba(255,0,0,${connect.strength})`
+            : `rgba(0,0,255,${connect.strength})`;
+        ctx.lineWidth = 2;
+        ctx.moveTo(start[0], start[1]);
+        ctx.lineTo(end[0], end[1]);
+        ctx.stroke();
+      }
+    },
+    [isVisualized, gameRecord, paddingX, paddingY, distanceX, distanceY]
+  );
+
   const drawAll = useCallback(() => {
     const ctx = getCtx();
     drawRect(ctx, {});
     drawLine(ctx, {});
     drawArc(ctx, { fgColor: 'gray' });
     drawStones();
-  }, [drawRect, drawLine, drawArc, drawStones]);
+    drawVisualLine(ctx);
+  }, [drawRect, drawLine, drawArc, drawStones, drawVisualLine]);
 
   useEffect(() => drawAll(), [drawAll]);
 
