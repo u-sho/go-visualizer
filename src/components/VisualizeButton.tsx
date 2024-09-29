@@ -1,25 +1,24 @@
-// src/components/VisualButton.tsx
 'use client';
 
-import React, { useState } from 'react';
+type VisualizeButtonProps = {
+  isVisualized: boolean;
+  onClick: React.MouseEventHandler<HTMLButtonElement>;
+};
 
-export const VisualButton = () => {
-  const [color, setColor] = useState('black');
-
-  const toggleColor = () => {
-    setColor((prevColor) => (prevColor === 'black' ? 'white' : 'black'));
-  };
-
+export const VisualButton: React.FC<VisualizeButtonProps> = ({
+  isVisualized,
+  onClick
+}) => {
   return (
     <button
       className={`px-4 py-2 rounded-md border-2 cursor-pointer text-lg ${
-        color === 'black'
+        isVisualized
           ? 'bg-black text-white border-gray-700'
           : 'bg-white text-black border-gray-700'
       }`}
-      onClick={toggleColor}
+      onClick={onClick}
     >
-      {color === 'black' ? 'Visualize On' : 'Visualize Off'}
+      {isVisualized ? 'Visualize On' : 'Visualize Off'}
     </button>
   );
 };

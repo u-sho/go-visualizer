@@ -17,6 +17,7 @@ type CanvasProps = {
   paddingX: number;
   paddingY: number;
   size: number;
+  isVisualized: boolean;
   stoneColor?: 'black' | 'white';
 };
 
@@ -28,18 +29,17 @@ export type StoneData = {
 };
 
 export const GameBoard = forwardRef(function GameBoard(
-  props: CanvasProps,
-  ref
-) {
-  const {
+  {
     canvasWidth,
     canvasHeight,
     paddingX,
     paddingY,
     size,
+    isVisualized,
     stoneColor = 'black'
-  } = props;
-
+  }: Readonly<CanvasProps>,
+  ref
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [distanceX, setDistanceX] = useState(
     (canvasWidth - 2 * paddingX) / (size - 1)
@@ -173,6 +173,8 @@ export const GameBoard = forwardRef(function GameBoard(
 
   const drawVisualLine = useCallback(
     (ctx: CanvasRenderingContext2D) => {
+      if (!isVisualized) return;
+
       const connects = calcGoConnects(gameRecord);
       console.log(gameRecord);
       console.table(connects);
@@ -185,14 +187,17 @@ export const GameBoard = forwardRef(function GameBoard(
         ];
         const end = [paddingX + endX * distanceX, paddingY + endY * distanceY];
         ctx.beginPath();
-        ctx.strokeStyle = connect.stoneColor === 'black' ? 'red' : 'blue';
+        ctx.strokeStyle =
+          connect.stoneColor === 'black'
+            ? `rgba(255,0,0,${connect.strength})`
+            : `rgba(0,0,255,${connect.strength})`;
         ctx.lineWidth = 2;
         ctx.moveTo(start[0], start[1]);
         ctx.lineTo(end[0], end[1]);
         ctx.stroke();
       }
     },
-    [gameRecord, paddingX, paddingY, distanceX, distanceY]
+    [isVisualized, gameRecord, paddingX, paddingY, distanceX, distanceY]
   );
 
   const drawAll = useCallback(() => {
