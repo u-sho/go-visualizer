@@ -1,5 +1,6 @@
 'use client';
 
+import { calcGoConnects } from '@/utils/go-connect';
 import {
   MouseEventHandler,
   useCallback,
@@ -20,8 +21,8 @@ type CanvasProps = {
 };
 
 // StoneRec 型の定義
-type StoneRec = `${number}-${number}`;
-type StoneData = {
+export type StoneRec = `${number}-${number}`;
+export type StoneData = {
   position: StoneRec;
   color: 'black' | 'white';
 };
@@ -170,13 +171,38 @@ export const GameBoard = forwardRef(function GameBoard(
     }
   }, [gameRecord, distanceX, distanceY, paddingX, paddingY]);
 
+  const drawVisualLine = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const connects = calcGoConnects(gameRecord);
+      console.log(gameRecord);
+      console.table(connects);
+      for (const connect of connects) {
+        const [startX, startY] = connect.start.split('-').map(Number);
+        const [endX, endY] = connect.end.split('-').map(Number);
+        const start = [
+          paddingX + startX * distanceX,
+          paddingY + startY * distanceY
+        ];
+        const end = [paddingX + endX * distanceX, paddingY + endY * distanceY];
+        ctx.beginPath();
+        ctx.strokeStyle = connect.stoneColor === 'black' ? 'red' : 'blue';
+        ctx.lineWidth = 2;
+        ctx.moveTo(start[0], start[1]);
+        ctx.lineTo(end[0], end[1]);
+        ctx.stroke();
+      }
+    },
+    [gameRecord, paddingX, paddingY, distanceX, distanceY]
+  );
+
   const drawAll = useCallback(() => {
     const ctx = getCtx();
     drawRect(ctx, {});
     drawLine(ctx, {});
     drawArc(ctx, { fgColor: 'gray' });
     drawStones();
-  }, [drawRect, drawLine, drawArc, drawStones]);
+    drawVisualLine(ctx);
+  }, [drawRect, drawLine, drawArc, drawStones, drawVisualLine]);
 
   useEffect(() => drawAll(), [drawAll]);
 

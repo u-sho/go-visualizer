@@ -53,7 +53,7 @@ export default function Page() {
             canvasHeight={boardWidth}
             paddingX={boardWidth * 0.03}
             paddingY={boardWidth * 0.03}
-            size={19}
+            size={9}
             stoneColor={stoneColor}
           />
         </div>
