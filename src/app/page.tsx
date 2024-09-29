@@ -51,11 +51,11 @@ export default function Page() {
   };
 
   return (
-    <div>
+    <div className="pt-16">
       <Header />
-      <div className="flex flex-col sm:flex-row items-center justify-between min-h-screen p-1 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-        {/* Gameboardを画面の左側に固定 */}
-        <div className="sm:fixed sm:left-8 sm:top-1/2 sm:transform sm:-translate-y-1/2">
+      <div className="flex flex-col sm:flex-row items-center sm:justify-between min-h-screen p-1 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+        {/* Game boardを画面の左側に固定 */}
+        <div className="mt-2 sm:mt-0 sm:fixed sm:left-8 sm:top-1/2 sm:transform sm:-translate-y-1/2">
           <GameBoard
             ref={gameBoardRef} // GameBoardの参照を取得
             canvasWidth={boardWidth}
