@@ -4,5 +4,5 @@
   },
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
-  "eslint.format.enable": true
+  "prettier.enable": true
 }
