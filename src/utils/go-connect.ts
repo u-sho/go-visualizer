@@ -50,12 +50,16 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const topPos = `${x}-${y - 1}` as StoneRec;
       const bottomPos = `${x}-${y + 1}` as StoneRec;
       const crossPos = [rightPos, dy === 1 ? bottomPos : topPos];
-      const oppositeStones = rec.filter(
-        ({ position, color }) =>
-          crossPos.includes(position) && color === getOppositeColor(stone.color)
+      const crossPosStones = rec.filter(({ position }) =>
+        crossPos.includes(position)
       );
+      const oppositeStones = crossPosStones.filter(
+        ({ color }) => color === getOppositeColor(stone.color)
+      );
+
+      const isマゲ = oppositeStones.length === 1 && crossPosStones.length === 2;
       const is切り違い = oppositeStones.length === 2;
-      const isConnected = isClosed && !is切り違い;
+      const isConnected = isClosed && !is切り違い && !isマゲ;
       if (isConnected) {
         connects.push({
           start,
@@ -269,12 +273,10 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
         dx === 1 ? `${x}-${y + (2 * dy) / 3}` : `${x + 2}-${y}`,
         dx === 1 ? `${x + dx}-${y + (2 * dy) / 3}` : `${x + 2}-${y + dy}`
       ] satisfies StoneRec[];
-      const hasBetweenOppositeStones = rec.some(
-        ({ position, color }) =>
-          betweenPositions.includes(position) &&
-          color === getOppositeColor(stone.color)
+      const hasBetweenStones = rec.some(({ position }) =>
+        betweenPositions.includes(position)
       );
-      if (hasBetweenOppositeStones) continue;
+      if (hasBetweenStones) continue;
 
       connects.push({
         start,
