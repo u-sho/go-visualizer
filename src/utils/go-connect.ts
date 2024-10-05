@@ -84,32 +84,26 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const rightPos = `${x + 1}-${y}` as StoneRec;
       const bottomPos = `${x}-${y + 1}` as StoneRec;
       const betweenPos = dy ? bottomPos : rightPos;
-      const betweenStones = rec.filter(
+      const hasBetweenStones = rec.some(
         ({ position }) => betweenPos === position
       );
-      const hasSameColorStone = betweenStones.some(
-        ({ color }) => color === stone.color
-      );
-      if (hasSameColorStone) continue;
+      if (hasBetweenStones) continue;
 
-      const isConnected = hasSameColorStone || betweenStones.length === 0;
-      if (isConnected) {
-        const rightTopPos = `${x + 1}-${y - 1}` as StoneRec;
-        const rightBottomPos = `${x + 1}-${y + 1}` as StoneRec;
-        const leftBottomPos = `${x - 1}-${y + 1}` as StoneRec;
-        const betweenPos = [rightBottomPos, dy ? leftBottomPos : rightTopPos];
-        const neerOppositeStones = rec.filter(
-          ({ position, color }) =>
-            betweenPos.includes(position) &&
-            color === getOppositeColor(stone.color)
-        );
-        connects.push({
-          start,
-          end,
-          stoneColor: stone.color,
-          strength: 1 - 0.25 * neerOppositeStones.length
-        });
-      }
+      const rightTopPos = `${x + 1}-${y - 1}` as StoneRec;
+      const rightBottomPos = `${x + 1}-${y + 1}` as StoneRec;
+      const leftBottomPos = `${x - 1}-${y + 1}` as StoneRec;
+      const betweenSidePos = [rightBottomPos, dy ? leftBottomPos : rightTopPos];
+      const neerOppositeStones = rec.filter(
+        ({ position, color }) =>
+          betweenSidePos.includes(position) &&
+          color === getOppositeColor(stone.color)
+      );
+      connects.push({
+        start,
+        end,
+        stoneColor: stone.color,
+        strength: 1 - 0.25 * neerOppositeStones.length
+      });
     }
 
     // ケイマの繋がりを調べる
@@ -145,7 +139,6 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       );
       if (betweenOppositeStones.length === 2) continue;
 
-      const isConnected = true;
       if (betweenOppositeStones.length === 1) {
         // TODO: 周囲の状況でstrengthを変える
         const oppositeStone = betweenOppositeStones[0];
@@ -157,16 +150,99 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
             )
         );
         if (hasSameColorStone) continue;
+
+        const sidePositions = [
+          dx === 1
+            ? (`${x + dx}-${y}` as StoneRec)
+            : (`${x}-${y + dy}` as StoneRec),
+          dx === 1
+            ? (`${x}-${y + dy}` as StoneRec)
+            : (`${x + dx}-${y}` as StoneRec)
+        ];
+        const hasSideOppositeStones = rec.some(
+          ({ position, color }) =>
+            sidePositions.includes(position) &&
+            color === getOppositeColor(stone.color)
+        );
+        if (hasSideOppositeStones) continue;
       }
 
-      if (isConnected) {
-        connects.push({
-          start,
-          end,
-          stoneColor: stone.color,
-          strength: 0.5 - 0.25 * betweenOppositeStones.length
-        });
+      connects.push({
+        start,
+        end,
+        stoneColor: stone.color,
+        strength: 0.5 - 0.25 * betweenOppositeStones.length
+      });
+    }
+
+    // 二間トビ・二間ビラキの繋がりを調べる
+    const twoStepDirections = [
+      [0, 3], // 下
+      [3, 0] // 右
+    ];
+    for (const [dx, dy] of twoStepDirections) {
+      const start = stone.position;
+      const nx = x + dx;
+      const ny = y + dy;
+      const end = `${nx}-${ny}` as StoneRec;
+      const isClosed = rec.some(
+        ({ position, color }) => position === end && color === stone.color
+      );
+      if (!isClosed) continue;
+
+      const nextPos =
+        dx > 0 ? (`${x + 1}-${y}` as StoneRec) : (`${x}-${y + 1}` as StoneRec);
+      const nextNextPos =
+        dx > 0 ? (`${x + 2}-${y}` as StoneRec) : (`${x}-${y + 2}` as StoneRec);
+      const betweenPos = [nextPos, nextNextPos];
+      const hasBetweenOppositeStones = rec.some(
+        ({ position, color }) =>
+          betweenPos.includes(position) &&
+          color === getOppositeColor(stone.color)
+      );
+      if (hasBetweenOppositeStones) continue;
+
+      let strength = 0.75;
+      const sidePositions = [
+        `${x + dy / 2}-${y + dx / 2}` as StoneRec,
+        `${x - dy / 2}-${y - dx / 2}` as StoneRec,
+        `${x + dx + dy / 2}-${y + dy + dx / 2}` as StoneRec,
+        `${x + dx - dy / 2}-${y + dy - dx / 2}` as StoneRec
+      ];
+      const nextSidePositions = [
+        `${x + 1}-${y + 1}` as StoneRec,
+        dx > 0
+          ? (`${x + 1}-${y - 1}` as StoneRec)
+          : (`${x - 1}-${y + 1}` as StoneRec)
+      ];
+      const nextNextSidePositions = [
+        dx > 0
+          ? (`${x + 2}-${y + 1}` as StoneRec)
+          : (`${x + 1}-${y + 2}` as StoneRec),
+        dx > 0
+          ? (`${x + 2}-${y - 1}` as StoneRec)
+          : (`${x - 1}-${y + 2}` as StoneRec)
+      ];
+      const neerPositions = [
+        ...sidePositions,
+        ...nextSidePositions,
+        ...nextNextSidePositions
+      ];
+      const neerOppositeStones = rec.filter(
+        ({ position, color }) =>
+          neerPositions.includes(position) &&
+          color === getOppositeColor(stone.color)
+      );
+      if (neerOppositeStones.length) {
+        strength -= 0.2 * neerOppositeStones.length;
       }
+
+      connects.push({
+        start,
+        end,
+        stoneColor: stone.color,
+        strength
+      });
     }
   }
   return connects;
