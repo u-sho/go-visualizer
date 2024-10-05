@@ -1,15 +1,26 @@
 'use client';
 
+import type {
+  GoAreaColor,
+  GoData,
+  GoLineColor,
+  GoPlayer,
+  GoPosition,
+  GoStone,
+  GoStoneColor
+} from '@/utils/go-type';
+
 import { calcGoConnects } from '@/utils/go-connect';
 import {
-  MouseEventHandler,
+  forwardRef,
   useCallback,
   useEffect,
   useRef,
   useState,
-  forwardRef,
-  useImperativeHandle
+  useImperativeHandle,
+  type MouseEventHandler
 } from 'react';
+import { env } from 'process';
 
 type CanvasProps = {
   canvasWidth: number;
@@ -18,15 +29,14 @@ type CanvasProps = {
   paddingY: number;
   size: number;
   isVisualized: boolean;
-  stoneColor?: 'black' | 'white';
+  stoneColor?: GoStoneColor;
 };
 
-// StoneRec 型の定義
-export type StoneRec = `${number}-${number}`;
-export type StoneData = {
-  position: StoneRec;
-  color: 'black' | 'white';
-};
+export const getStoneColor = (player: GoPlayer): GoStoneColor => player;
+export const getLineColor = (player: GoPlayer): GoLineColor =>
+  player === 'black' ? 'red' : 'blue';
+export const getAreaColor = (player: GoPlayer): GoAreaColor =>
+  player === 'black' ? 'red' : 'blue';
 
 export const GameBoard = forwardRef(function GameBoard(
   {
@@ -47,7 +57,7 @@ export const GameBoard = forwardRef(function GameBoard(
   const [distanceY, setDistanceY] = useState(
     (canvasHeight - 2 * paddingY) / (size - 1)
   );
-  const [gameRecord, setGameRecord] = useState<StoneData[]>([]);
+  const [gameRecord, setGameRecord] = useState<GoData>([]);
 
   useEffect(() => {
     setDistanceX((canvasWidth - 2 * paddingX) / (size - 1));
@@ -151,7 +161,7 @@ export const GameBoard = forwardRef(function GameBoard(
     const startAngle = 0;
     const endAngle = Math.PI * 2;
 
-    for (const { position, color } of gameRecord) {
+    for (const { position, player } of gameRecord) {
       const [stoneX, stoneY] = position.split('-').map(Number);
       const y = paddingY + stoneY * distanceY;
       const x = paddingX + stoneX * distanceX;
@@ -159,7 +169,7 @@ export const GameBoard = forwardRef(function GameBoard(
       // 石の塗りつぶし描画
       ctx.beginPath();
       ctx.arc(x, y, radius, startAngle, endAngle, true);
-      ctx.fillStyle = color;
+      ctx.fillStyle = getStoneColor(player);
       ctx.fill();
 
       // 境界線の描画
@@ -176,8 +186,10 @@ export const GameBoard = forwardRef(function GameBoard(
       if (!isVisualized) return;
 
       const connects = calcGoConnects(gameRecord);
-      console.log(gameRecord);
-      console.table(connects);
+      if (env.DEV_MODE) {
+        console.log(gameRecord);
+        console.table(connects);
+      }
       for (const connect of connects) {
         const [startX, startY] = connect.start.split('-').map(Number);
         const [endX, endY] = connect.end.split('-').map(Number);
@@ -188,7 +200,7 @@ export const GameBoard = forwardRef(function GameBoard(
         const end = [paddingX + endX * distanceX, paddingY + endY * distanceY];
         ctx.beginPath();
         ctx.strokeStyle =
-          connect.stoneColor === 'black'
+          connect.player === 'black'
             ? `rgba(255,0,0,${connect.strength})`
             : `rgba(0,0,255,${connect.strength})`;
         ctx.lineWidth = 2;
@@ -226,11 +238,11 @@ export const GameBoard = forwardRef(function GameBoard(
       if (lineY - distanceY / 2 <= y && y <= lineY + distanceY / 2) stoneY = i;
     }
 
-    const stoneRec: StoneRec = `${stoneX}-${stoneY}`;
+    const stoneRec: GoPosition = `${stoneX}-${stoneY}`;
     if (!gameRecord.some((record) => record.position === stoneRec)) {
       setGameRecord((prev) => [
         ...prev,
-        { position: stoneRec, color: stoneColor }
+        { position: stoneRec, player: stoneColor } satisfies GoStone
       ]);
       drawAll();
     }

@@ -6,11 +6,12 @@ import { StoneButton } from '@/components/StoneButton';
 import { VisualButton } from '@/components/VisualizeButton';
 import { Header } from '@/components/Header';
 import { useEffect, useRef, useState } from 'react';
+import type { GoStoneColor } from '@/utils/go-type';
 
 export default function Page() {
   const [boardSize, setBoardSize] = useState(9);
   const [boardWidth, setBoardWidth] = useState(900);
-  const [stoneColor, setStoneColor] = useState<'black' | 'white'>('black');
+  const [stoneColor, setStoneColor] = useState<GoStoneColor>('black');
   const [isVisualized, setIsVisualized] = useState(false);
   const gameBoardRef = useRef<{ deleteLastStone: () => void }>(null);
 
@@ -75,7 +76,7 @@ export default function Page() {
             onClick={handleToggleVisualize}
           />
           <StoneButton color={stoneColor} onClick={handleToggleColor} />
-          <BackButton onClick={handleDeleteLastStone} />{' '}
+          <BackButton onClick={handleDeleteLastStone} />
           {/* 直近の石を削除するボタン */}
         </div>
       </div>

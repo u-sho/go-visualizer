@@ -1,15 +1,10 @@
-import type { StoneData, StoneRec } from '@/components/GameBoard';
+import type { GoConnection, GoData, GoPlayer, GoPosition } from './go-type';
 
-const getOppositeColor = (color: 'black' | 'white') =>
-  color === 'black' ? 'white' : 'black';
+const getOpposite = (player: GoPlayer): GoPlayer =>
+  player === 'black' ? 'white' : 'black';
 
-export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
-  const connects: {
-    start: StoneRec;
-    end: StoneRec;
-    stoneColor: 'black' | 'white';
-    strength: number; // 1が強連結，0に近いほど繋がりが弱い
-  }[] = [];
+export const calcGoConnects = (rec: GoData) => {
+  const connects: GoConnection[] = [];
   for (const stone of rec) {
     const [x, y] = stone.position.split('-').map(Number);
 
@@ -22,12 +17,12 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const start = stone.position;
       const nx = x + dx;
       const ny = y + dy;
-      const end = `${nx}-${ny}` as StoneRec;
+      const end = `${nx}-${ny}` satisfies GoPosition;
       const isConnected = rec.some(
-        ({ position, color }) => position === end && color === stone.color
+        ({ position, player }) => position === end && player === stone.player
       );
       if (isConnected) {
-        connects.push({ start, end, stoneColor: stone.color, strength: 1 });
+        connects.push({ start, end, player: stone.player, strength: 1 });
       }
     }
 
@@ -40,21 +35,21 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const start = stone.position;
       const nx = x + dx;
       const ny = y + dy;
-      const end = `${nx}-${ny}` as StoneRec;
+      const end = `${nx}-${ny}` satisfies GoPosition;
       const isClosed = !!rec.find(
-        ({ position, color }) => position === end && color === stone.color
+        ({ position, player }) => position === end && player === stone.player
       );
       if (!isClosed) continue;
 
-      const rightPos = `${x + 1}-${y}` as StoneRec;
-      const topPos = `${x}-${y - 1}` as StoneRec;
-      const bottomPos = `${x}-${y + 1}` as StoneRec;
+      const rightPos = `${x + 1}-${y}` satisfies GoPosition;
+      const topPos = `${x}-${y - 1}` satisfies GoPosition;
+      const bottomPos = `${x}-${y + 1}` satisfies GoPosition;
       const crossPos = [rightPos, dy === 1 ? bottomPos : topPos];
       const crossPosStones = rec.filter(({ position }) =>
         crossPos.includes(position)
       );
       const oppositeStones = crossPosStones.filter(
-        ({ color }) => color === getOppositeColor(stone.color)
+        ({ player }) => player === getOpposite(stone.player)
       );
 
       const isマゲ = oppositeStones.length === 1 && crossPosStones.length === 2;
@@ -64,7 +59,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
         connects.push({
           start,
           end,
-          stoneColor: stone.color,
+          player: stone.player,
           strength: oppositeStones.length ? 0.5 : 1
         });
       }
@@ -79,33 +74,33 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const start = stone.position;
       const nx = x + dx;
       const ny = y + dy;
-      const end = `${nx}-${ny}` as StoneRec;
+      const end = `${nx}-${ny}` satisfies GoPosition;
       const isClosed = rec.some(
-        ({ position, color }) => position === end && color === stone.color
+        ({ position, player }) => position === end && player === stone.player
       );
       if (!isClosed) continue;
 
-      const rightPos = `${x + 1}-${y}` as StoneRec;
-      const bottomPos = `${x}-${y + 1}` as StoneRec;
+      const rightPos = `${x + 1}-${y}` satisfies GoPosition;
+      const bottomPos = `${x}-${y + 1}` satisfies GoPosition;
       const betweenPos = dy ? bottomPos : rightPos;
       const hasBetweenStones = rec.some(
         ({ position }) => betweenPos === position
       );
       if (hasBetweenStones) continue;
 
-      const rightTopPos = `${x + 1}-${y - 1}` as StoneRec;
-      const rightBottomPos = `${x + 1}-${y + 1}` as StoneRec;
-      const leftBottomPos = `${x - 1}-${y + 1}` as StoneRec;
+      const rightTopPos = `${x + 1}-${y - 1}` satisfies GoPosition;
+      const rightBottomPos = `${x + 1}-${y + 1}` satisfies GoPosition;
+      const leftBottomPos = `${x - 1}-${y + 1}` satisfies GoPosition;
       const betweenSidePos = [rightBottomPos, dy ? leftBottomPos : rightTopPos];
       const neerOppositeStones = rec.filter(
-        ({ position, color }) =>
+        ({ position, player }) =>
           betweenSidePos.includes(position) &&
-          color === getOppositeColor(stone.color)
+          player === getOpposite(stone.player)
       );
       connects.push({
         start,
         end,
-        stoneColor: stone.color,
+        player: stone.player,
         strength: 1 - 0.25 * neerOppositeStones.length
       });
     }
@@ -121,25 +116,24 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const start = stone.position;
       const nx = x + dx;
       const ny = y + dy;
-      const end = `${nx}-${ny}` as StoneRec;
+      const end = `${nx}-${ny}` satisfies GoPosition;
       const isClosed = rec.some(
-        ({ position, color }) => position === end && color === stone.color
+        ({ position, player }) => position === end && player === stone.player
       );
       if (!isClosed) continue;
 
-      const rightPos = `${x + 1}-${y}` as StoneRec;
-      const topPos = `${x}-${y - 1}` as StoneRec;
-      const bottomPos = `${x}-${y + 1}` as StoneRec;
-      const rightTopPos = `${x + 1}-${y - 1}` as StoneRec;
-      const rightBottomPos = `${x + 1}-${y + 1}` as StoneRec;
+      const rightPos = `${x + 1}-${y}` satisfies GoPosition;
+      const topPos = `${x}-${y - 1}` satisfies GoPosition;
+      const bottomPos = `${x}-${y + 1}` satisfies GoPosition;
+      const rightTopPos = `${x + 1}-${y - 1}` satisfies GoPosition;
+      const rightBottomPos = `${x + 1}-${y + 1}` satisfies GoPosition;
       const betweenPos = [
         dy > 0 ? rightBottomPos : rightTopPos,
         dx === 2 ? rightPos : dy > 0 ? bottomPos : topPos
       ];
       const betweenOppositeStones = rec.filter(
-        ({ position, color }) =>
-          betweenPos.includes(position) &&
-          color === getOppositeColor(stone.color)
+        ({ position, player }) =>
+          betweenPos.includes(position) && player === getOpposite(stone.player)
       );
       if (betweenOppositeStones.length === 2) continue;
 
@@ -150,23 +144,20 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
           (pos) =>
             pos !== oppositeStone.position &&
             rec.some(
-              ({ position, color }) => position === pos && color === stone.color
+              ({ position, player }) =>
+                position === pos && player === stone.player
             )
         );
         if (hasSameColorStone) continue;
 
         const sidePositions = [
-          dx === 1
-            ? (`${x + dx}-${y}` as StoneRec)
-            : (`${x}-${y + dy}` as StoneRec),
-          dx === 1
-            ? (`${x}-${y + dy}` as StoneRec)
-            : (`${x + dx}-${y}` as StoneRec)
-        ];
+          dx === 1 ? `${x + dx}-${y}` : `${x}-${y + dy}`,
+          dx === 1 ? `${x}-${y + dy}` : `${x + dx}-${y}`
+        ] satisfies GoPosition[];
         const hasSideOppositeStones = rec.some(
-          ({ position, color }) =>
+          ({ position, player }) =>
             sidePositions.includes(position) &&
-            color === getOppositeColor(stone.color)
+            player === getOpposite(stone.player)
         );
         if (hasSideOppositeStones) continue;
       }
@@ -174,7 +165,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       connects.push({
         start,
         end,
-        stoneColor: stone.color,
+        player: stone.player,
         strength: 0.5 - 0.25 * betweenOppositeStones.length
       });
     }
@@ -188,54 +179,46 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const start = stone.position;
       const nx = x + dx;
       const ny = y + dy;
-      const end = `${nx}-${ny}` as StoneRec;
+      const end = `${nx}-${ny}` satisfies GoPosition;
       const isClosed = rec.some(
-        ({ position, color }) => position === end && color === stone.color
+        ({ position, player }) => position === end && player === stone.player
       );
       if (!isClosed) continue;
 
-      const nextPos =
-        dx > 0 ? (`${x + 1}-${y}` as StoneRec) : (`${x}-${y + 1}` as StoneRec);
-      const nextNextPos =
-        dx > 0 ? (`${x + 2}-${y}` as StoneRec) : (`${x}-${y + 2}` as StoneRec);
+      const nextPos: GoPosition = dx > 0 ? `${x + 1}-${y}` : `${x}-${y + 1}`;
+      const nextNextPos: GoPosition =
+        dx > 0 ? `${x + 2}-${y}` : `${x}-${y + 2}`;
       const betweenPos = [nextPos, nextNextPos];
       const hasBetweenOppositeStones = rec.some(
-        ({ position, color }) =>
-          betweenPos.includes(position) &&
-          color === getOppositeColor(stone.color)
+        ({ position, player }) =>
+          betweenPos.includes(position) && player === getOpposite(stone.player)
       );
       if (hasBetweenOppositeStones) continue;
 
       let strength = 0.75;
       const sidePositions = [
-        `${x + dy / 2}-${y + dx / 2}` as StoneRec,
-        `${x - dy / 2}-${y - dx / 2}` as StoneRec,
-        `${x + dx + dy / 2}-${y + dy + dx / 2}` as StoneRec,
-        `${x + dx - dy / 2}-${y + dy - dx / 2}` as StoneRec
-      ];
+        `${x + dy / 2}-${y + dx / 2}`,
+        `${x - dy / 2}-${y - dx / 2}`,
+        `${x + dx + dy / 2}-${y + dy + dx / 2}`,
+        `${x + dx - dy / 2}-${y + dy - dx / 2}`
+      ] satisfies GoPosition[];
       const nextSidePositions = [
-        `${x + 1}-${y + 1}` as StoneRec,
-        dx > 0
-          ? (`${x + 1}-${y - 1}` as StoneRec)
-          : (`${x - 1}-${y + 1}` as StoneRec)
-      ];
+        `${x + 1}-${y + 1}`,
+        dx > 0 ? `${x + 1}-${y - 1}` : `${x - 1}-${y + 1}`
+      ] satisfies GoPosition[];
       const nextNextSidePositions = [
-        dx > 0
-          ? (`${x + 2}-${y + 1}` as StoneRec)
-          : (`${x + 1}-${y + 2}` as StoneRec),
-        dx > 0
-          ? (`${x + 2}-${y - 1}` as StoneRec)
-          : (`${x - 1}-${y + 2}` as StoneRec)
-      ];
+        dx > 0 ? `${x + 2}-${y + 1}` : `${x + 1}-${y + 2}`,
+        dx > 0 ? `${x + 2}-${y - 1}` : `${x - 1}-${y + 2}`
+      ] satisfies GoPosition[];
       const neerPositions = [
         ...sidePositions,
         ...nextSidePositions,
         ...nextNextSidePositions
       ];
       const neerOppositeStones = rec.filter(
-        ({ position, color }) =>
+        ({ position, player }) =>
           neerPositions.includes(position) &&
-          color === getOppositeColor(stone.color)
+          player === getOpposite(stone.player)
       );
       if (neerOppositeStones.length) {
         strength -= 0.2 * neerOppositeStones.length;
@@ -244,7 +227,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       connects.push({
         start,
         end,
-        stoneColor: stone.color,
+        player: stone.player,
         strength
       });
     }
@@ -260,9 +243,9 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       const start = stone.position;
       const nx = x + dx;
       const ny = y + dy;
-      const end = `${nx}-${ny}` as StoneRec;
+      const end = `${nx}-${ny}` satisfies GoPosition;
       const isClosed = rec.some(
-        ({ position, color }) => position === end && color === stone.color
+        ({ position, player }) => position === end && player === stone.player
       );
       if (!isClosed) continue;
 
@@ -272,7 +255,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
         dx === 1 ? `${x + dx}-${y + dy / 3}` : `${x + dx / 3}-${y + dy}`,
         dx === 1 ? `${x}-${y + (2 * dy) / 3}` : `${x + 2}-${y}`,
         dx === 1 ? `${x + dx}-${y + (2 * dy) / 3}` : `${x + 2}-${y + dy}`
-      ] satisfies StoneRec[];
+      ] satisfies GoPosition[];
       const hasBetweenStones = rec.some(({ position }) =>
         betweenPositions.includes(position)
       );
@@ -281,7 +264,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       connects.push({
         start,
         end,
-        stoneColor: stone.color,
+        player: stone.player,
         strength
       });
     }
