@@ -13,7 +13,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
   for (const stone of rec) {
     const [x, y] = stone.position.split('-').map(Number);
 
-    // 直線方向の繋がりを調べる
+    // ナラビ・オシ・ノビ・マゲ・・・の繋がりを調べる
     const directDirections = [
       [1, 0],
       [0, 1]
@@ -31,7 +31,7 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       }
     }
 
-    // 斜め方向の繋がりを調べる
+    // コスミ・ハネ・切り違いの繋がりを調べる
     const diagonalDirections = [
       [1, 1],
       [1, -1]
@@ -236,6 +236,45 @@ export const calcGoConnects = (rec: ReadonlyArray<StoneData>) => {
       if (neerOppositeStones.length) {
         strength -= 0.2 * neerOppositeStones.length;
       }
+
+      connects.push({
+        start,
+        end,
+        stoneColor: stone.color,
+        strength
+      });
+    }
+
+    // オオゲイマの繋がりを調べる
+    const bigKnightDirections = [
+      [1, -3], // 右上（上）
+      [3, -1], // 右上（右）
+      [3, 1], // 右下（右）
+      [1, 3] // 右下（下）
+    ];
+    for (const [dx, dy] of bigKnightDirections) {
+      const start = stone.position;
+      const nx = x + dx;
+      const ny = y + dy;
+      const end = `${nx}-${ny}` as StoneRec;
+      const isClosed = rec.some(
+        ({ position, color }) => position === end && color === stone.color
+      );
+      if (!isClosed) continue;
+
+      const strength = 0.5;
+      const betweenPositions = [
+        dx === 1 ? `${x}-${y + dy / 3}` : `${x + dx / 3}-${y}`,
+        dx === 1 ? `${x + dx}-${y + dy / 3}` : `${x + dx / 3}-${y + dy}`,
+        dx === 1 ? `${x}-${y + (2 * dy) / 3}` : `${x + 2}-${y}`,
+        dx === 1 ? `${x + dx}-${y + (2 * dy) / 3}` : `${x + 2}-${y + dy}`
+      ] satisfies StoneRec[];
+      const hasBetweenOppositeStones = rec.some(
+        ({ position, color }) =>
+          betweenPositions.includes(position) &&
+          color === getOppositeColor(stone.color)
+      );
+      if (hasBetweenOppositeStones) continue;
 
       connects.push({
         start,
