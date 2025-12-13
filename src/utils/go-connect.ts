@@ -92,7 +92,7 @@ export const calcGoConnects = (rec: GoData) => {
       const rightBottomPos = `${x + 1}-${y + 1}` satisfies GoPosition;
       const leftBottomPos = `${x - 1}-${y + 1}` satisfies GoPosition;
       const betweenSidePos = [rightBottomPos, dy ? leftBottomPos : rightTopPos];
-      const neerOppositeStones = rec.filter(
+      const nearOppositeStones = rec.filter(
         ({ position, player }) =>
           betweenSidePos.includes(position) &&
           player === getOpposite(stone.player)
@@ -101,7 +101,7 @@ export const calcGoConnects = (rec: GoData) => {
         start,
         end,
         player: stone.player,
-        strength: 1 - 0.25 * neerOppositeStones.length
+        strength: 1 - 0.25 * nearOppositeStones.length
       });
     }
 
@@ -210,18 +210,18 @@ export const calcGoConnects = (rec: GoData) => {
         dx > 0 ? `${x + 2}-${y + 1}` : `${x + 1}-${y + 2}`,
         dx > 0 ? `${x + 2}-${y - 1}` : `${x - 1}-${y + 2}`
       ] satisfies GoPosition[];
-      const neerPositions = [
+      const nearPositions = [
         ...sidePositions,
         ...nextSidePositions,
         ...nextNextSidePositions
       ];
-      const neerOppositeStones = rec.filter(
+      const nearOppositeStones = rec.filter(
         ({ position, player }) =>
-          neerPositions.includes(position) &&
+          nearPositions.includes(position) &&
           player === getOpposite(stone.player)
       );
-      if (neerOppositeStones.length) {
-        strength -= 0.2 * neerOppositeStones.length;
+      if (nearOppositeStones.length) {
+        strength -= 0.2 * nearOppositeStones.length;
       }
 
       connects.push({
