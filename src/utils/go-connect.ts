@@ -88,16 +88,16 @@ export const calcGoConnects = (rec: Readonly<GoData>) => {
         MOVE_右,
         { dx: 0, dy }
       ] as const satisfies ReadonlyArray<MoveDistance>;
-      const キリチガイpositionStones = rec.filter(({ position }) =>
+      const sidePositionStones = rec.filter(({ position }) =>
         MOVES_キリチガイ.some(({ dx, dy }) => {
-          const target = addPosition(position, dx, dy);
+          const target = addPosition(start, dx, dy);
           return target && isSamePosition(target, position);
         })
       );
-      const キリチガイpositionOppositeStones = キリチガイpositionStones.filter(
+      const キリチガイpositionOppositeStones = sidePositionStones.filter(
         ({ player }) => player === getOpposite(stone.player)
       );
-      const マゲpositionStones = キリチガイpositionStones.filter(
+      const マゲpositionStones = sidePositionStones.filter(
         ({ player }) => player === stone.player
       );
 
@@ -113,7 +113,7 @@ export const calcGoConnects = (rec: Readonly<GoData>) => {
         start,
         end,
         player: stone.player,
-        strength: マゲpositionStones.length > 0 ? 0.5 : 1
+        strength: キリチガイpositionOppositeStones.length > 0 ? 0.5 : 1
       });
     }
 
