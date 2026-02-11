@@ -123,7 +123,7 @@ export const GameBoard = forwardRef(function GameBoard(
     [size, canvasWidth, canvasHeight, paddingX, paddingY, distanceX, distanceY]
   );
 
-  const drawArc = useCallback(
+  const drawStar = useCallback(
     (
       ctx: CanvasRenderingContext2D,
       { fgColor = 'black' }: Pick<Partial<Context2DCallbackOptions>, 'fgColor'>
@@ -144,6 +144,7 @@ export const GameBoard = forwardRef(function GameBoard(
         [16, 16]
       ];
       if (size === 9) arcPos = [[5, 5]];
+
       ctx.beginPath();
       ctx.fillStyle = fgColor;
       for (const pos of arcPos) {
@@ -159,7 +160,7 @@ export const GameBoard = forwardRef(function GameBoard(
 
   const drawStones = useCallback(() => {
     const ctx = getCtx();
-    const radius = Math.min(distanceX, distanceY) / 2 - 2;
+    const radius = Math.min(distanceX, distanceY) / 2 - 1;
     const startAngle = 0;
     const endAngle = Math.PI * 2;
 
@@ -178,7 +179,7 @@ export const GameBoard = forwardRef(function GameBoard(
       ctx.beginPath();
       ctx.arc(x, y, radius, startAngle, endAngle, true);
       ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.stroke();
     }
   }, [gameRecord, distanceX, distanceY, paddingX, paddingY]);
@@ -217,11 +218,11 @@ export const GameBoard = forwardRef(function GameBoard(
   const drawAll = useCallback(() => {
     const ctx = getCtx();
     drawRect(ctx, {});
-    drawLine(ctx, {});
-    drawArc(ctx, { fgColor: 'gray' });
+    drawLine(ctx, { fgColor: '#444' });
+    drawStar(ctx, { fgColor: '#444' });
     drawStones();
     drawVisualLine(ctx);
-  }, [drawRect, drawLine, drawArc, drawStones, drawVisualLine]);
+  }, [drawRect, drawLine, drawStar, drawStones, drawVisualLine]);
 
   useEffect(() => drawAll(), [drawAll]);
 
