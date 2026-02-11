@@ -1,229 +1,308 @@
-import type { GoConnection, GoData, GoPlayer, GoPosition } from './go-type';
+'use strict';
+
+import {
+  MOVE_上,
+  MOVE_右,
+  MOVE_下,
+  MOVES_隣接,
+  MOVES_コスミ,
+  MOVES_一間トビ,
+  MOVES_ケイマ,
+  MoveDistance,
+  MOVE_右下,
+  MOVE_右上,
+  MOVES_二間トビ,
+  MOVES_大ゲイマ
+} from './moves';
+import type {
+  GoConnection,
+  GoData,
+  GoBoardSize,
+  GoPlayer,
+  GoPosition,
+  GoPositionX,
+  GoPositionY
+} from './go-type';
 
 const getOpposite = (player: GoPlayer): GoPlayer =>
   player === 'black' ? 'white' : 'black';
 
-export const calcGoConnects = (rec: GoData) => {
-  const connects: GoConnection[] = [];
-  for (const stone of rec) {
-    const [x, y] = stone.position.split('-').map(Number);
+const isOnBoard = (x: number): x is GoPositionX<19> | GoPositionY<19> =>
+  Number.isSafeInteger(x) && 1 <= x && x <= 19;
 
-    // ナラビ・オシ・ノビ・マゲ・・・の繋がりを調べる
-    const directDirections = [
-      [1, 0],
-      [0, 1]
-    ];
-    for (const [dx, dy] of directDirections) {
-      const start = stone.position;
-      const nx = x + dx;
-      const ny = y + dy;
-      const end = `${nx}-${ny}` satisfies GoPosition;
-      const isConnected = rec.some(
-        ({ position, player }) => position === end && player === stone.player
+const isSamePosition = <Size extends GoBoardSize>(
+  pos1: Readonly<GoPosition<Size>>,
+  pos2: Readonly<GoPosition<Size>>
+) => pos1.x === pos2.x && pos1.y === pos2.y;
+
+/** 指定位置に移動（盤外の場合はnull） */
+const addPosition = (
+  pos: GoPosition<19>,
+  dx: number,
+  dy: number
+): GoPosition<19> | null => {
+  const x = pos.x + dx;
+  const y = pos.y + dy;
+  if (!isOnBoard(x) || !isOnBoard(y)) return null;
+  return { x, y } satisfies GoPosition<19>;
+};
+
+export const calcGoConnects = (rec: Readonly<GoData>) => {
+  const connects: GoConnection[] = [];
+
+  for (const stone of rec) {
+    const start = stone.position;
+
+    // ナラビ・オシ・ノビ・マゲ・・・の繋がりを調べる（→と↓）
+    for (const { dx, dy } of MOVES_隣接) {
+      const end = addPosition(start, dx, dy);
+      if (!end) continue;
+
+      const hasConnectedStone = rec.some(
+        ({ position, player }) =>
+          isSamePosition(position, end) && player === stone.player
       );
-      if (isConnected) {
-        connects.push({ start, end, player: stone.player, strength: 1 });
-      }
+      if (!hasConnectedStone) continue;
+
+      connects.push({
+        start,
+        end,
+        player: stone.player,
+        strength: 1
+      });
     }
 
-    // コスミ・ハネ・切り違いの繋がりを調べる
-    const diagonalDirections = [
-      [1, 1],
-      [1, -1]
-    ];
-    for (const [dx, dy] of diagonalDirections) {
-      const start = stone.position;
-      const nx = x + dx;
-      const ny = y + dy;
-      const end = `${nx}-${ny}` satisfies GoPosition;
-      const isClosed = !!rec.find(
-        ({ position, player }) => position === end && player === stone.player
-      );
-      if (!isClosed) continue;
+    // コスミ・ハネ・切り違いの繋がりを調べる（↗と↘）
+    for (const { dx, dy } of MOVES_コスミ) {
+      const end = addPosition(start, dx, dy);
+      if (!end) continue;
 
-      const rightPos = `${x + 1}-${y}` satisfies GoPosition;
-      const topPos = `${x}-${y - 1}` satisfies GoPosition;
-      const bottomPos = `${x}-${y + 1}` satisfies GoPosition;
-      const crossPos = [rightPos, dy === 1 ? bottomPos : topPos];
-      const crossPosStones = rec.filter(({ position }) =>
-        crossPos.includes(position)
+      const hasコスミpositionStone = rec.some(
+        ({ position, player }) =>
+          isSamePosition(position, end) && player === stone.player
       );
-      const oppositeStones = crossPosStones.filter(
+      if (!hasコスミpositionStone) continue;
+
+      // 切り違いの位置にある石を調べる（↘に対して→と↓，↗に対して→と↑）
+      const MOVES_キリチガイ = [
+        MOVE_右,
+        { dx: 0, dy }
+      ] as const satisfies ReadonlyArray<MoveDistance>;
+      const キリチガイpositionStones = rec.filter(({ position }) =>
+        MOVES_キリチガイ.some(({ dx, dy }) => {
+          const target = addPosition(position, dx, dy);
+          return target && isSamePosition(target, position);
+        })
+      );
+      const キリチガイpositionOppositeStones = キリチガイpositionStones.filter(
         ({ player }) => player === getOpposite(stone.player)
       );
+      const マゲpositionStones = キリチガイpositionStones.filter(
+        ({ player }) => player === stone.player
+      );
 
-      const isマゲ = oppositeStones.length === 1 && crossPosStones.length === 2;
-      const is切り違い = oppositeStones.length === 2;
-      const isConnected = isClosed && !is切り違い && !isマゲ;
-      if (isConnected) {
+      // キリチガイ・マゲを含めない（アキ三角は含める）
+      const isキリチガイ = キリチガイpositionOppositeStones.length === 2;
+      const isマゲ =
+        マゲpositionStones.length === 1 &&
+        キリチガイpositionOppositeStones.length === 1;
+      const isNotConnected = isキリチガイ || isマゲ;
+      if (isNotConnected) continue;
+
+      connects.push({
+        start,
+        end,
+        player: stone.player,
+        strength: マゲpositionStones.length > 0 ? 0.5 : 1
+      });
+    }
+
+    // 一間トビの繋がりを調べる（⇢と⇣）
+    for (const { dx, dy } of MOVES_一間トビ) {
+      const end = addPosition(start, dx, dy);
+      if (!end) continue;
+
+      const has一間トビpositionStone = rec.some(
+        ({ position, player }) =>
+          isSamePosition(position, end) && player === stone.player
+      );
+      if (!has一間トビpositionStone) continue;
+
+      // ワリコミの位置にある石を調べる
+      const MOVE_ワリコミ = dx ? MOVE_右 : MOVE_下;
+      const hasワリコミpositionStone = rec.some(({ position }) => {
+        const target = addPosition(start, MOVE_ワリコミ.dx, MOVE_ワリコミ.dy);
+        return target && isSamePosition(position, target);
+      });
+      if (hasワリコミpositionStone) continue;
+
+      // ノゾキの位置にある石を調べる
+      const MOVES_ノゾキ = [
+        MOVE_右下,
+        { dx: dx - 1, dy: dy - 1 } // ⇢なら↗，⇣なら↙
+      ] as const satisfies ReadonlyArray<MoveDistance>;
+      const ノゾキpositions = MOVES_ノゾキ.map(({ dx, dy }) =>
+        addPosition(start, dx, dy)
+      ).filter((pos) => pos !== null);
+      const ノゾキpositionOppositeStones = rec.filter(
+        ({ position, player }) =>
+          ノゾキpositions.some((pos) => isSamePosition(pos, position)) &&
+          player === getOpposite(stone.player)
+      );
+
+      connects.push({
+        start,
+        end,
+        player: stone.player,
+        strength: 1 - 0.25 * ノゾキpositionOppositeStones.length
+      });
+    }
+
+    // ケイマの繋がりを調べる（4方向）
+    for (const { dx, dy } of MOVES_ケイマ) {
+      const end = addPosition(start, dx, dy);
+      if (!end) continue;
+
+      const hasケイマpositionStone = rec.some(
+        ({ position, player }) =>
+          isSamePosition(position, end) && player === stone.player
+      );
+      if (!hasケイマpositionStone) continue;
+
+      // ツケコシ，ツキダシの位置にある石を調べる
+      const betweenMoves = [
+        dy > 0 ? MOVE_右下 : MOVE_右上,
+        dx === 2 ? MOVE_右 : dy > 0 ? MOVE_下 : MOVE_上
+      ] as const;
+      const betweenPositions = betweenMoves.map(
+        ({ dx, dy }) => addPosition(start, dx, dy)!
+      );
+      const sidePositions = [
+        addPosition(start, 0, dy)!,
+        addPosition(start, dx, 0)!
+      ];
+
+      /** 無
+       * ○⦿＊　　○┼＊　　○┼＊
+       * ＊⦿○　　＊○○　　＊●○
+       */
+      const betweenStones = rec.filter(({ position }) =>
+        betweenPositions.some((pos) => isSamePosition(pos, position))
+      );
+      if (betweenStones.length) continue;
+
+      /** 接
+       * ○┼┼
+       * ┼┼○
+       */
+      const sideStones = rec.filter(({ position }) =>
+        sidePositions.some((pos) => isSamePosition(pos, position))
+      );
+      if (sideStones.length === 0) {
         connects.push({
           start,
           end,
           player: stone.player,
-          strength: oppositeStones.length ? 0.5 : 1
+          strength: 0.5
         });
-      }
-    }
-
-    // 一間トビの繋がりを調べる
-    const oneStepDirections = [
-      [0, 2], // 下
-      [2, 0] // 右
-    ];
-    for (const [dx, dy] of oneStepDirections) {
-      const start = stone.position;
-      const nx = x + dx;
-      const ny = y + dy;
-      const end = `${nx}-${ny}` satisfies GoPosition;
-      const isClosed = rec.some(
-        ({ position, player }) => position === end && player === stone.player
-      );
-      if (!isClosed) continue;
-
-      const rightPos = `${x + 1}-${y}` satisfies GoPosition;
-      const bottomPos = `${x}-${y + 1}` satisfies GoPosition;
-      const betweenPos = dy ? bottomPos : rightPos;
-      const hasBetweenStones = rec.some(
-        ({ position }) => betweenPos === position
-      );
-      if (hasBetweenStones) continue;
-
-      const rightTopPos = `${x + 1}-${y - 1}` satisfies GoPosition;
-      const rightBottomPos = `${x + 1}-${y + 1}` satisfies GoPosition;
-      const leftBottomPos = `${x - 1}-${y + 1}` satisfies GoPosition;
-      const betweenSidePos = [rightBottomPos, dy ? leftBottomPos : rightTopPos];
-      const nearOppositeStones = rec.filter(
-        ({ position, player }) =>
-          betweenSidePos.includes(position) &&
-          player === getOpposite(stone.player)
-      );
-      connects.push({
-        start,
-        end,
-        player: stone.player,
-        strength: 1 - 0.25 * nearOppositeStones.length
-      });
-    }
-
-    // ケイマの繋がりを調べる
-    const knightDirections = [
-      [1, -2], // 右上（上）
-      [2, -1], // 右上（右）
-      [2, 1], // 右下（右）
-      [1, 2] // 右下（下）
-    ];
-    for (const [dx, dy] of knightDirections) {
-      const start = stone.position;
-      const nx = x + dx;
-      const ny = y + dy;
-      const end = `${nx}-${ny}` satisfies GoPosition;
-      const isClosed = rec.some(
-        ({ position, player }) => position === end && player === stone.player
-      );
-      if (!isClosed) continue;
-
-      const rightPos = `${x + 1}-${y}` satisfies GoPosition;
-      const topPos = `${x}-${y - 1}` satisfies GoPosition;
-      const bottomPos = `${x}-${y + 1}` satisfies GoPosition;
-      const rightTopPos = `${x + 1}-${y - 1}` satisfies GoPosition;
-      const rightBottomPos = `${x + 1}-${y + 1}` satisfies GoPosition;
-      const betweenPos = [
-        dy > 0 ? rightBottomPos : rightTopPos,
-        dx === 2 ? rightPos : dy > 0 ? bottomPos : topPos
-      ];
-      const betweenOppositeStones = rec.filter(
-        ({ position, player }) =>
-          betweenPos.includes(position) && player === getOpposite(stone.player)
-      );
-      if (betweenOppositeStones.length === 2) continue;
-
-      if (betweenOppositeStones.length === 1) {
-        // TODO: 周囲の状況でstrengthを変える
-        const oppositeStone = betweenOppositeStones[0];
-        const hasSameColorStone = betweenPos.some(
-          (pos) =>
-            pos !== oppositeStone.position &&
-            rec.some(
-              ({ position, player }) =>
-                position === pos && player === stone.player
-            )
-        );
-        if (hasSameColorStone) continue;
-
-        const sidePositions = [
-          dx === 1 ? `${x + dx}-${y}` : `${x}-${y + dy}`,
-          dx === 1 ? `${x}-${y + dy}` : `${x + dx}-${y}`
-        ] satisfies GoPosition[];
-        const hasSideOppositeStones = rec.some(
-          ({ position, player }) =>
-            sidePositions.includes(position) &&
-            player === getOpposite(stone.player)
-        );
-        if (hasSideOppositeStones) continue;
+        continue;
       }
 
-      connects.push({
-        start,
-        end,
-        player: stone.player,
-        strength: 0.5 - 0.25 * betweenOppositeStones.length
-      });
+      /** タケフ
+       * ○┼○
+       * ○┼○
+       */
+      const sideSameColorStones = sideStones.filter(
+        ({ player }) => player === stone.player
+      );
+      if (sideSameColorStones.length === 2) {
+        connects.push({
+          start,
+          end,
+          player: stone.player,
+          strength: 1
+        });
+        continue;
+      }
+
+      /** 微強
+       * ○┼○
+       * ┼┼○
+       */
+      if (sideSameColorStones.length === sideStones.length) {
+        connects.push({
+          start,
+          end,
+          player: stone.player,
+          strength: 0.75
+        });
+        continue;
+      }
+
+      /** 接
+       * ○┼○
+       * ●┼○
+       */
+      if (sideSameColorStones.length === 1) {
+        connects.push({
+          start,
+          end,
+          player: stone.player,
+          strength: 0.5
+        });
+        continue;
+      }
+
+      /** 無
+       * ○┼●
+       * ●┼○
+       */
+      if (sideSameColorStones.length === 0) continue;
     }
 
     // 二間トビ・二間ビラキの繋がりを調べる
-    const twoStepDirections = [
-      [0, 3], // 下
-      [3, 0] // 右
-    ];
-    for (const [dx, dy] of twoStepDirections) {
-      const start = stone.position;
-      const nx = x + dx;
-      const ny = y + dy;
-      const end = `${nx}-${ny}` satisfies GoPosition;
-      const isClosed = rec.some(
-        ({ position, player }) => position === end && player === stone.player
-      );
-      if (!isClosed) continue;
+    for (const { dx, dy } of MOVES_二間トビ) {
+      const end = addPosition(start, dx, dy);
+      if (!end) continue;
 
-      const nextPos: GoPosition = dx > 0 ? `${x + 1}-${y}` : `${x}-${y + 1}`;
-      const nextNextPos: GoPosition =
-        dx > 0 ? `${x + 2}-${y}` : `${x}-${y + 2}`;
-      const betweenPos = [nextPos, nextNextPos];
-      const hasBetweenOppositeStones = rec.some(
+      const has二間トビpositionStone = rec.some(
         ({ position, player }) =>
-          betweenPos.includes(position) && player === getOpposite(stone.player)
+          isSamePosition(position, end) && player === stone.player
       );
-      if (hasBetweenOppositeStones) continue;
+      if (!has二間トビpositionStone) continue;
 
-      let strength = 0.75;
-      const sidePositions = [
-        `${x + dy / 2}-${y + dx / 2}`,
-        `${x - dy / 2}-${y - dx / 2}`,
-        `${x + dx + dy / 2}-${y + dy + dx / 2}`,
-        `${x + dx - dy / 2}-${y + dy - dx / 2}`
+      const betweenPositions = [
+        addPosition(start, dx / 3, dy / 3)!,
+        addPosition(start, (2 * dx) / 3, (2 * dy) / 3)!
       ] satisfies GoPosition[];
-      const nextSidePositions = [
-        `${x + 1}-${y + 1}`,
-        dx > 0 ? `${x + 1}-${y - 1}` : `${x - 1}-${y + 1}`
-      ] satisfies GoPosition[];
-      const nextNextSidePositions = [
-        dx > 0 ? `${x + 2}-${y + 1}` : `${x + 1}-${y + 2}`,
-        dx > 0 ? `${x + 2}-${y - 1}` : `${x - 1}-${y + 2}`
-      ] satisfies GoPosition[];
+      const hasBetweenStone = rec.some(({ position }) =>
+        betweenPositions.some((target) => isSamePosition(position, target))
+      );
+      if (hasBetweenStone) continue;
+
       const nearPositions = [
-        ...sidePositions,
-        ...nextSidePositions,
-        ...nextNextSidePositions
-      ];
-      const nearOppositeStones = rec.filter(
-        ({ position, player }) =>
-          nearPositions.includes(position) &&
-          player === getOpposite(stone.player)
+        addPosition(start, dx / 3 + (dx ? 0 : 1), dy / 3 + (dy ? 0 : 1)),
+        addPosition(start, dx / 3 + (dx ? 0 : -1), dy / 3 + (dy ? 0 : -1)),
+        addPosition(
+          start,
+          (2 * dx) / 3 + (dx ? 0 : 1),
+          (2 * dy) / 3 + (dy ? 0 : 1)
+        ),
+        addPosition(
+          start,
+          (2 * dx) / 3 + (dx ? 0 : -1),
+          (2 * dy) / 3 + (dy ? 0 : -1)
+        )
+      ].filter((pos) => pos !== null);
+      const nearStones = rec.filter(({ position }) =>
+        nearPositions.some((pos) => isSamePosition(position, pos))
       );
-      if (nearOppositeStones.length) {
-        strength -= 0.2 * nearOppositeStones.length;
-      }
-
+      const nearOppositeStones = nearStones.filter(
+        ({ player }) => player === getOpposite(stone.player)
+      );
+      const strength =
+        0.5 + 0.25 * (nearStones.length - 2 * nearOppositeStones.length);
+      if (strength <= 0) continue;
       connects.push({
         start,
         end,
@@ -233,34 +312,51 @@ export const calcGoConnects = (rec: GoData) => {
     }
 
     // オオゲイマの繋がりを調べる
-    const bigKnightDirections = [
-      [1, -3], // 右上（上）
-      [3, -1], // 右上（右）
-      [3, 1], // 右下（右）
-      [1, 3] // 右下（下）
-    ];
-    for (const [dx, dy] of bigKnightDirections) {
-      const start = stone.position;
-      const nx = x + dx;
-      const ny = y + dy;
-      const end = `${nx}-${ny}` satisfies GoPosition;
-      const isClosed = rec.some(
-        ({ position, player }) => position === end && player === stone.player
-      );
-      if (!isClosed) continue;
+    for (const { dx, dy } of MOVES_大ゲイマ) {
+      const end = addPosition(start, dx, dy);
+      if (!end) continue;
 
-      const strength = 0.5;
+      const has大ゲイマpositionStone = rec.some(
+        ({ position, player }) =>
+          isSamePosition(position, end) && player === stone.player
+      );
+      if (!has大ゲイマpositionStone) continue;
+
       const betweenPositions = [
-        dx === 1 ? `${x}-${y + dy / 3}` : `${x + dx / 3}-${y}`,
-        dx === 1 ? `${x + dx}-${y + dy / 3}` : `${x + dx / 3}-${y + dy}`,
-        dx === 1 ? `${x}-${y + (2 * dy) / 3}` : `${x + 2}-${y}`,
-        dx === 1 ? `${x + dx}-${y + (2 * dy) / 3}` : `${x + 2}-${y + dy}`
-      ] satisfies GoPosition[];
-      const hasBetweenStones = rec.some(({ position }) =>
-        betweenPositions.includes(position)
+        addPosition(start, Math.sign(dx), Math.sign(dy))!,
+        addPosition(start, Math.round(dx / 3), Math.round(dy / 3))!,
+        addPosition(
+          start,
+          Math.round(dx / 3) + Math.sign(dx),
+          Math.round(dy / 3) + Math.sign(dy)
+        )!,
+        addPosition(
+          start,
+          Math.sign(dx) * Math.floor((2 * Math.abs(dx)) / 3),
+          Math.sign(dy) * Math.floor((2 * Math.abs(dy)) / 3)
+        )!
+      ] as const satisfies GoPosition[];
+      const betweenStones = rec.filter(({ position }) =>
+        betweenPositions.some((pos) => isSamePosition(position, pos))
       );
-      if (hasBetweenStones) continue;
+      if (betweenStones.length) continue;
 
+      const sidePositions = [
+        addPosition(start, dx, 0)!,
+        addPosition(start, 0, dy)!
+      ] as const satisfies GoPosition[];
+      const sideStones = rec.filter(({ position }) =>
+        sidePositions.some((pos) => isSamePosition(position, pos))
+      );
+      const sideSameColorStones = sideStones.filter(
+        ({ player }) => player === stone.player
+      );
+
+      let strength = 0.5;
+      if (sideStones.length) {
+        if (sideSameColorStones.length < sideStones.length) continue;
+        else strength = 0.75;
+      }
       connects.push({
         start,
         end,
@@ -269,5 +365,6 @@ export const calcGoConnects = (rec: GoData) => {
       });
     }
   }
+
   return connects;
 };

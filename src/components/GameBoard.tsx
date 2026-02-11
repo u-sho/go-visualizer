@@ -6,6 +6,8 @@ import type {
   GoLineColor,
   GoPlayer,
   GoPosition,
+  GoPositionX,
+  GoPositionY,
   GoStone,
   GoStoneColor
 } from '@/utils/go-type';
@@ -130,8 +132,6 @@ export const GameBoard = forwardRef(function GameBoard(
       const radius = 5;
       const startAngle = 0;
       const endAngle = Math.PI * 2;
-      ctx.beginPath();
-      ctx.fillStyle = fgColor;
       let arcPos = [
         [4, 4],
         [10, 4],
@@ -144,11 +144,13 @@ export const GameBoard = forwardRef(function GameBoard(
         [16, 16]
       ];
       if (size === 9) arcPos = [[5, 5]];
+      ctx.beginPath();
+      ctx.fillStyle = fgColor;
       for (const pos of arcPos) {
         const y = paddingY + (pos[1] - 1) * distanceY;
         const x = paddingX + (pos[0] - 1) * distanceX;
         ctx.moveTo(x, y);
-        ctx.arc(x, y, radius, startAngle, endAngle, true);
+        ctx.arc(x, y, radius, startAngle, endAngle);
       }
       ctx.fill();
     },
@@ -162,7 +164,7 @@ export const GameBoard = forwardRef(function GameBoard(
     const endAngle = Math.PI * 2;
 
     for (const { position, player } of gameRecord) {
-      const [stoneX, stoneY] = position.split('-').map(Number);
+      const { x: stoneX, y: stoneY } = position;
       const y = paddingY + stoneY * distanceY;
       const x = paddingX + stoneX * distanceX;
 
@@ -191,8 +193,8 @@ export const GameBoard = forwardRef(function GameBoard(
         console.table(connects);
       }
       for (const connect of connects) {
-        const [startX, startY] = connect.start.split('-').map(Number);
-        const [endX, endY] = connect.end.split('-').map(Number);
+        const { x: startX, y: startY } = connect.start;
+        const { x: endX, y: endY } = connect.end;
         const start = [
           paddingX + startX * distanceX,
           paddingY + startY * distanceY
@@ -229,16 +231,20 @@ export const GameBoard = forwardRef(function GameBoard(
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    let stoneX = 0,
-      stoneY = 0;
+    let stoneX = null,
+      stoneY = null;
     for (let i = 0; i < size; i++) {
       const lineY = paddingY + i * distanceY;
       const lineX = paddingX + i * distanceX;
       if (lineX - distanceX / 2 <= x && x <= lineX + distanceX / 2) stoneX = i;
       if (lineY - distanceY / 2 <= y && y <= lineY + distanceY / 2) stoneY = i;
     }
+    if (stoneX === null || stoneY === null) return;
 
-    const stoneRec: GoPosition = `${stoneX}-${stoneY}`;
+    const stoneRec: GoPosition = {
+      x: stoneX as GoPositionX<19>,
+      y: stoneY as GoPositionY<19>
+    };
     if (!gameRecord.some((record) => record.position === stoneRec)) {
       setGameRecord((prev) => [
         ...prev,
