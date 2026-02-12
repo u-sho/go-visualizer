@@ -20,7 +20,8 @@ import {
   useRef,
   useState,
   useImperativeHandle,
-  type MouseEventHandler
+  type MouseEventHandler,
+  useMemo
 } from 'react';
 import { env } from 'process';
 
@@ -53,18 +54,15 @@ export const GameBoard = forwardRef(function GameBoard(
   ref
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [distanceX, setDistanceX] = useState(
-    (canvasWidth - 2 * paddingX) / (size - 1)
+  const distanceX = useMemo(
+    () => (canvasWidth - 2 * paddingX) / (size - 1),
+    [canvasWidth, paddingX, size]
   );
-  const [distanceY, setDistanceY] = useState(
-    (canvasHeight - 2 * paddingY) / (size - 1)
+  const distanceY = useMemo(
+    () => (canvasHeight - 2 * paddingY) / (size - 1),
+    [canvasHeight, paddingY, size]
   );
   const [gameRecord, setGameRecord] = useState<GoData>([]);
-
-  useEffect(() => {
-    setDistanceX((canvasWidth - 2 * paddingX) / (size - 1));
-    setDistanceY((canvasHeight - 2 * paddingY) / (size - 1));
-  }, [canvasHeight, canvasWidth, paddingX, paddingY, size]);
 
   const getCtx = (): CanvasRenderingContext2D => {
     const canvas: HTMLCanvasElement | null = canvasRef.current;
