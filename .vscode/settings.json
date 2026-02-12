@@ -5,5 +5,7 @@
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "prettier.enable": true,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  "chat.mcp.gallery.enabled": true
 }
