@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "format": "prettier . --write"
+    "format": "oxfmt --write"
   },
   "dependencies": {
     "next": "^16.1.6",
@@ -22,8 +22,8 @@
     "eslint": "^9",
     "eslint-config-next": "^16.1.6",
     "eslint-config-prettier": "^10.1.8",
+    "oxfmt": "^0.32.0",
     "postcss": "^8.5.6",
-    "prettier": "^3.8.1",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3"
   }
