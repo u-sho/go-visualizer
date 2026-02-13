@@ -1,9 +1,12 @@
 {
   "[typescript][typescriptreact][json][jsonc]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   },
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
-  "prettier.enable": true,
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  "chat.mcp.gallery.enabled": true
 }
