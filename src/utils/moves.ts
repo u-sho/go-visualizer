@@ -5,13 +5,13 @@ export type MoveBase =
   | typeof MOVE_左
   | typeof MOVE_下;
 
-/* oxfmt-ignore */ export const MOVE_上 = { dx:  0, dy: -1 } as const satisfies MoveDistance;
-/* oxfmt-ignore */ export const MOVE_右 = { dx:  1, dy:  0 } as const satisfies MoveDistance;
-/* oxfmt-ignore */ export const MOVE_左 = { dx: -1, dy:  0 } as const satisfies MoveDistance;
-/* oxfmt-ignore */ export const MOVE_下 = { dx:  0, dy:  1 } as const satisfies MoveDistance;
+export const MOVE_上 = { dx:  0, dy: -1 } as const satisfies MoveDistance; // oxfmt-ignore
+export const MOVE_右 = { dx:  1, dy:  0 } as const satisfies MoveDistance; // oxfmt-ignore
+export const MOVE_左 = { dx: -1, dy:  0 } as const satisfies MoveDistance; // oxfmt-ignore
+export const MOVE_下 = { dx:  0, dy:  1 } as const satisfies MoveDistance; // oxfmt-ignore
 
-/* oxfmt-ignore */ export const MOVE_右上 = { dx: 1, dy: -1 } as const satisfies MoveDistance;
-/* oxfmt-ignore */ export const MOVE_右下 = { dx: 1, dy:  1 } as const satisfies MoveDistance;
+export const MOVE_右上 = { dx: 1, dy: -1 } as const satisfies MoveDistance; // oxfmt-ignore
+export const MOVE_右下 = { dx: 1, dy:  1 } as const satisfies MoveDistance; // oxfmt-ignore
 
 export const MOVES_隣接 = [
   MOVE_右,
