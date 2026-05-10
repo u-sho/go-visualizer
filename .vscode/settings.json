@@ -1,11 +1,15 @@
 {
-  "[typescript][typescriptreact][json][jsonc]": {
+  "[typescript][typescriptreact]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": true
   },
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": true
+  },
+  "[json][jsonc][yaml]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true
   },
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
