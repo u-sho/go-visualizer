@@ -31,6 +31,8 @@
   :root {
     --background: #ffffff;
     --foreground: #171717;
+    --trans-dur: 0.6s;
+    --trans-timing: cubic-bezier(0.65, 0, 0.35, 1);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -44,5 +46,36 @@
     color: var(--foreground);
     background: var(--background);
     font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .switch-light {
+    position: relative;
+    display: block;
+    --color-hue: 3;
+
+    &:before {
+      content: '';
+      border-color: unset;
+      background-color: hsl(var(--color-hue), 90%, 70%);
+      border-radius: 50%;
+      box-shadow:
+        0 -0.0625em 0.0625em hsl(var(--color-hue), 90%, 40%) inset,
+        0 0 0.125em hsla(var(--color-hue), 90%, 70%, 0.3),
+        0 0 0.125em hsla(var(--color-hue), 90%, 70%, 0.3),
+        0.125em 0.125em 0.125em hsla(0, 0%, 0%, 0.5);
+      display: block;
+      position: absolute;
+      top: 0.125rem;
+      left: 0.125rem;
+      width: 0.7rem;
+      height: 0.7rem;
+      transition:
+        background-color var(--trans-dur) var(--trans-timing),
+        box-shadow var(--trans-dur) var(--trans-timing);
+      z-index: 1;
+    }
+  }
+  .switch-light-on {
+    --color-hue: 123;
   }
 }

@@ -11,14 +11,12 @@ export const VisualButton: React.FC<VisualizeButtonProps> = ({
 }) => {
   return (
     <button
-      className={`px-4 py-2 rounded-md border-2 cursor-pointer text-lg ${
-        isVisualized
-          ? 'bg-black text-white border-gray-700'
-          : 'bg-white text-black border-gray-700'
+      className={`switch-light px-4 py-2 rounded-md border-2 cursor-pointer text-lg border-gray-700 ${
+        isVisualized ? 'switch-light-on' : 'pl-9'
       }`}
       onClick={onClickAction}
     >
-      {isVisualized ? 'Visualized' : 'Visualize'}
+      {isVisualized ? 'Unvisualize' : 'Visualize'}
     </button>
   );
 };
