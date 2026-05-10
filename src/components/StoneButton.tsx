@@ -2,10 +2,13 @@
 
 type StoneButtonProps = {
   color: 'black' | 'white';
-  onClick: React.MouseEventHandler<HTMLButtonElement>;
+  onClickAction: React.MouseEventHandler<HTMLButtonElement>;
 };
 
-export const StoneButton: React.FC<StoneButtonProps> = ({ color, onClick }) => {
+export const StoneButton: React.FC<StoneButtonProps> = ({
+  color,
+  onClickAction
+}) => {
   return (
     <button
       className={`px-4 py-2 rounded-md border-2 cursor-pointer text-lg ${
@@ -13,7 +16,7 @@ export const StoneButton: React.FC<StoneButtonProps> = ({ color, onClick }) => {
           ? 'bg-black text-white border-gray-700'
           : 'bg-white text-black border-gray-700'
       }`}
-      onClick={onClick}
+      onClick={onClickAction}
     >
       {color === 'black' ? 'Switch to White' : 'Switch to Black'}
     </button>

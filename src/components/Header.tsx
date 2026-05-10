@@ -1,8 +1,6 @@
 // src/components/Header.tsx
 'use client';
 
-import React from 'react';
-
 export const Header = () => {
   return (
     <header className="bg-gray-800 text-white fixed top-0 left-0 w-full p-0 z-50">

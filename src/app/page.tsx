@@ -73,11 +73,12 @@ export default function Page() {
         <div className="flex flex-col gap-4 sm:w-1/2 sm:ml-auto sm:flex-row sm:items-center sm:justify-center">
           <VisualButton
             isVisualized={isVisualized}
-            onClick={handleToggleVisualize}
+            onClickAction={handleToggleVisualize}
           />
-          <StoneButton color={stoneColor} onClick={handleToggleColor} />
-          <BackButton onClick={handleDeleteLastStone} />
+          <StoneButton color={stoneColor} onClickAction={handleToggleColor} />
+
           {/* 直近の石を削除するボタン */}
+          <BackButton onClickAction={handleDeleteLastStone} />
         </div>
       </div>
     </div>

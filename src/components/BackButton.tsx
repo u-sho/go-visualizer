@@ -1,4 +1,8 @@
-export const BackButton = ({ onClick }: { onClick: () => void }) => {
+export const BackButton = ({
+  onClickAction
+}: {
+  onClickAction: React.MouseEventHandler<HTMLButtonElement>;
+}) => {
   return (
     <button
       style={{
@@ -9,7 +13,7 @@ export const BackButton = ({ onClick }: { onClick: () => void }) => {
         border: 'none',
         cursor: 'pointer'
       }}
-      onClick={onClick}
+      onClick={onClickAction}
     >
       Back
     </button>

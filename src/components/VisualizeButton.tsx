@@ -2,12 +2,12 @@
 
 type VisualizeButtonProps = {
   isVisualized: boolean;
-  onClick: React.MouseEventHandler<HTMLButtonElement>;
+  onClickAction: React.MouseEventHandler<HTMLButtonElement>;
 };
 
 export const VisualButton: React.FC<VisualizeButtonProps> = ({
   isVisualized,
-  onClick
+  onClickAction
 }) => {
   return (
     <button
@@ -16,9 +16,9 @@ export const VisualButton: React.FC<VisualizeButtonProps> = ({
           ? 'bg-black text-white border-gray-700'
           : 'bg-white text-black border-gray-700'
       }`}
-      onClick={onClick}
+      onClick={onClickAction}
     >
-      {isVisualized ? 'Visualize On' : 'Visualize Off'}
+      {isVisualized ? 'Visualized' : 'Visualize'}
     </button>
   );
 };
