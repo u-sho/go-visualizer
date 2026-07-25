@@ -174,8 +174,8 @@ export const calcGoConnects = (rec: Readonly<GoData>) => {
         dy > 0 ? MOVE_右下 : MOVE_右上,
         dx === 2 ? MOVE_右 : dy > 0 ? MOVE_下 : MOVE_上
       ] as const;
-      const betweenPositions = betweenMoves.map(
-        ({ dx, dy }) => addPosition(start, dx, dy)!
+      const betweenPositions = betweenMoves.map(({ dx, dy }) =>
+        addPosition(start, dx, dy)!
       );
       const sidePositions = [
         addPosition(start, 0, dy)!,
