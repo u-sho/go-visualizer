@@ -244,22 +244,23 @@ export const GameBoard = forwardRef(function GameBoard(
       x: stoneX as GoPositionX<19>,
       y: stoneY as GoPositionY<19>
     };
-    if (!gameRecord.some((record) => record.position === stoneRec)) {
-      setGameRecord((prev) => [
+    setGameRecord((prev) => {
+      const isOccupied = prev.some(
+        ({ position }) => position.x === stoneRec.x && position.y === stoneRec.y
+      );
+      if (isOccupied) return prev;
+      return [
         ...prev,
         { position: stoneRec, player: stoneColor } satisfies GoStone
-      ]);
-      drawAll();
-    }
+      ];
+    });
   };
 
   // 直近の石を削除する関数
   const deleteLastStone = () => {
     setGameRecord((prev) => {
       if (prev.length === 0) return prev;
-      const newRecord = prev.slice(0, -1);
-      drawAll(); // 盤面を再描画
-      return newRecord;
+      return prev.slice(0, -1);
     });
   };
 
