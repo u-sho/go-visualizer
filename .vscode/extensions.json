@@ -1,8 +1,7 @@
 {
-  "recommendations": [
+  "recommendations": ["bradlc.vscode-tailwindcss", "oxc.oxc-vscode"],
+  "unwantedRecommendations": [
     "dbaeumer.vscode-eslint",
-    "bradlc.vscode-tailwindcss",
-    "oxc.oxc-vscode"
-  ],
-  "unwantedRecommendations": ["esbenp.prettier-vscode"]
+    "esbenp.prettier-vscode"
+  ]
 }
